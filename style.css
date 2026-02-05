@@ -1,0 +1,54 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: radial-gradient(circle at top, #020617, #000);
+  color: #e5e7eb;
+  text-align: center;
+}
+
+header {
+  padding: 80px 20px;
+}
+
+header h1 {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+#typing {
+  font-size: 1.2rem;
+  color: #38bdf8;
+  min-height: 1.5em;
+}
+
+.about {
+  max-width: 600px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+.social {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.social a {
+  padding: 10px 18px;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  color: #38bdf8;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.social a:hover {
+  background: #38bdf8;
+  color: #020617;
+}
+
+footer {
+  opacity: 0.5;
+  padding-bottom: 20px;
+}
