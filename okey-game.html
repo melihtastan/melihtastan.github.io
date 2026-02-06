@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okey Oyunu - Online & Offline</title>
+    <meta name="description" content="4 kişilik online veya botlarla offline okey oyunu">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        :root {
+            --primary: #1a5f3c;
+            --primary-dark: #0d3d25;
+            --accent: #ffd700;
+            --accent-glow: rgba(255, 215, 0, 0.4);
+            --card-bg: #fff;
+            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            --red: #e53935;
+            --blue: #1e88e5;
+            --yellow: #fbc02d;
+            --black: #424242;
+            --green: #43a047;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, #2e7d32 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Ana Menü */
+        #main-menu {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0d3d25 0%, #1a5f3c 50%, #2e7d32 100%);
+            z-index: 1000;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .menu-logo {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-shadow: 0 0 30px var(--accent-glow), 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 1rem;
+            letter-spacing: 8px;
+        }
+
+        .menu-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        .menu-container {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .menu-btn {
+            display: block;
+            width: 280px;
+            padding: 18px 30px;
+            margin: 12px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .menu-btn.primary {
+            background: linear-gradient(135deg, var(--accent), #ffb300);
+            color: #1a1a1a;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .menu-btn.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .menu-btn.secondary {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            color: white;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .menu-btn.secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Bot Seçim Modalı */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background: linear-gradient(145deg, #1e1e1e, #2d2d2d);
+            border-radius: 20px;
+            padding: 2.5rem;
+            min-width: 350px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal h2 {
+            color: var(--accent);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .bot-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .bot-option {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .bot-option:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: var(--accent);
+        }
+
+        .bot-option.selected {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .bot-option .number {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .bot-option .label {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(135deg, var(--accent), #ffb300);
+            color: #1a1a1a;
+        }
+
+        .modal-btn.cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Online Modalı */
+        .online-input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .online-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .room-code {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .room-code .code {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 5px;
+        }
+
+        .room-code .hint {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .players-list {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .player-slot {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .player-slot.filled {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .player-slot .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .player-slot .name {
+            color: white;
+            flex: 1;
+        }
+
+        .player-slot .status {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .player-slot.filled .status {
+            color: #4caf50;
+        }
+
+        /* Oyun Alanı */
+        #game-area {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background:
+                radial-gradient(ellipse at center, rgba(46, 125, 50, 0.3) 0%, transparent 70%),
+                linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, #2e7d32 100%);
+        }
+
+        #game-area.active {
+            display: block;
+        }
+
+        /* Oyuncu Alanları */
+        .player-area {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-info {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .player-info.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 25px var(--accent-glow);
+        }
+
+        .player-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #ffb300);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #1a1a1a;
+        }
+
+        .player-details {
+            color: white;
+        }
+
+        .player-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .player-tiles {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        /* Alt Oyuncu (Ben) */
+        #player-bottom {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: column;
+        }
+
+        /* Üst Oyuncu */
+        #player-top {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Sol Oyuncu */
+        #player-left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Sağ Oyuncu */
+        #player-right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Taş Rafı (Oyuncu eli) */
+        .tile-rack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-width: 800px;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Taş Stili */
+        .tile {
+            width: 45px;
+            height: 60px;
+            background: linear-gradient(180deg, #fff 0%, #f5f5f5 100%);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.4rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.8);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tile:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .tile.selected {
+            transform: translateY(-15px);
+            box-shadow: 0 15px 30px rgba(255, 215, 0, 0.5);
+            border: 3px solid var(--accent);
+        }
+
+        .tile.red {
+            color: var(--red);
+        }
+
+        .tile.blue {
+            color: var(--blue);
+        }
+
+        .tile.yellow {
+            color: var(--yellow);
+        }
+
+        .tile.black {
+            color: var(--black);
+        }
+
+        .tile.joker::after {
+            content: '★';
+            position: absolute;
+            bottom: 3px;
+            font-size: 0.7rem;
+            color: inherit;
+        }
+
+        .tile.back {
+            background: linear-gradient(135deg, #8b4513, #a0522d);
+            color: transparent;
+        }
+
+        .tile.back::before {
+            content: '⬥';
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Orta Alan */
+        #center-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        /* Gösterge Taşı */
+        #indicator-tile {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        #indicator-tile .label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+
+        /* Deste ve Çöp */
+        .pile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pile-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        .pile-count {
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--accent);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        #draw-pile .tile,
+        #discard-pile .tile {
+            cursor: pointer;
+        }
+
+        #draw-pile .tile:hover,
+        #discard-pile .tile:hover {
+            transform: scale(1.05);
+        }
+
+        /* Kontrol Butonları */
+        #controls {
+            position: absolute;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+        }
+
+        .control-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .control-btn.sort {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+        }
+
+        .control-btn.okey {
+            background: linear-gradient(135deg, var(--accent), #ffb300);
+            color: #1a1a1a;
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Sıra Göstergesi */
+        #turn-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--accent);
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: none;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px var(--accent-glow);
+            }
+
+            50% {
+                box-shadow: 0 0 40px var(--accent-glow);
+            }
+        }
+
+        /* Toast Bildirimi */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            display: none;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .menu-logo {
+                font-size: 2.5rem;
+            }
+
+            .menu-btn {
+                width: 240px;
+                padding: 15px 20px;
+            }
+
+            .tile {
+                width: 35px;
+                height: 48px;
+                font-size: 1.1rem;
+            }
+
+            .tile-rack {
+                max-width: 95vw;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Ana Menü -->
+    <div id="main-menu">
+        <div class="menu-logo">OKEY</div>
+        <div class="menu-subtitle">Klasik Türk Oyunu</div>
+        <div class="menu-container">
+            <button class="menu-btn primary" onclick="showBotModal()">🎮 TEK OYUNCU</button>
+            <button class="menu-btn secondary" onclick="showOnlineModal('create')">🌐 ODA OLUŞTUR</button>
+            <button class="menu-btn secondary" onclick="showOnlineModal('join')">🔗 ODAYA KATIL</button>
+        </div>
+    </div>
+
+    <!-- Bot Seçim Modalı -->
+    <div id="bot-modal" class="modal-overlay">
+        <div class="modal">
+            <h2>🤖 Bot Sayısını Seç</h2>
+            <div class="bot-options">
+                <div class="bot-option" data-bots="1" onclick="selectBots(1)">
+                    <div class="number">1</div>
+                    <div class="label">Bot</div>
+                </div>
+                <div class="bot-option selected" data-bots="2" onclick="selectBots(2)">
+                    <div class="number">2</div>
+                    <div class="label">Bot</div>
+                </div>
+                <div class="bot-option" data-bots="3" onclick="selectBots(3)">
+                    <div class="number">3</div>
+                    <div class="label">Bot</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeModal('bot-modal')">İptal</button>
+                <button class="modal-btn confirm" onclick="startOfflineGame()">Başla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Oda Oluştur Modalı -->
+    <div id="create-modal" class="modal-overlay">
+        <div class="modal">
+            <h2>🌐 Oda Oluştur</h2>
+            <input type="text" class="online-input" id="player-name" placeholder="Adınızı girin..." maxlength="15">
+            <div class="room-code" id="room-code-display" style="display:none;">
+                <div class="hint">Oda Kodu</div>
+                <div class="code" id="room-code">----</div>
+                <div class="hint">Bu kodu arkadaşlarınızla paylaşın</div>
+            </div>
+            <div class="players-list" id="players-list" style="display:none;"></div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeOnlineModal()">İptal</button>
+                <button class="modal-btn confirm" id="create-room-btn" onclick="createRoom()">Oda Oluştur</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Odaya Katıl Modalı -->
+    <div id="join-modal" class="modal-overlay">
+        <div class="modal">
+            <h2>🔗 Odaya Katıl</h2>
+            <input type="text" class="online-input" id="join-name" placeholder="Adınızı girin..." maxlength="15">
+            <input type="text" class="online-input" id="room-id-input" placeholder="Oda kodunu girin..." maxlength="6"
+                style="text-transform: uppercase;">
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeModal('join-modal')">İptal</button>
+                <button class="modal-btn confirm" onclick="joinRoom()">Katıl</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Oyun Alanı -->
+    <div id="game-area">
+        <!-- Üst Oyuncu -->
+        <div id="player-top" class="player-area">
+            <div class="player-info" id="info-top">
+                <div class="player-avatar">K</div>
+                <div class="player-details">
+                    <div class="player-name">Karşı</div>
+                    <div class="player-tiles">14 taş</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sol Oyuncu -->
+        <div id="player-left" class="player-area">
+            <div class="player-info" id="info-left">
+                <div class="player-avatar">S</div>
+                <div class="player-details">
+                    <div class="player-name">Sol</div>
+                    <div class="player-tiles">14 taş</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Oyuncu -->
+        <div id="player-right" class="player-area">
+            <div class="player-info" id="info-right">
+                <div class="player-avatar">S</div>
+                <div class="player-details">
+                    <div class="player-name">Sağ</div>
+                    <div class="player-tiles">14 taş</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orta Alan -->
+        <div id="center-area">
+            <div id="indicator-tile">
+                <div class="label">Gösterge</div>
+                <div class="tile red" id="indicator">5</div>
+            </div>
+            <div class="pile" id="draw-pile">
+                <div class="tile back" onclick="drawTile()"></div>
+                <div class="pile-count" id="deck-count">56</div>
+                <div class="pile-label">Deste</div>
+            </div>
+            <div class="pile" id="discard-pile">
+                <div class="tile" id="discard-top" style="visibility:hidden;"></div>
+                <div class="pile-label">Çöp</div>
+            </div>
+        </div>
+
+        <!-- Kontroller -->
+        <div id="controls">
+            <button class="control-btn sort" onclick="sortTiles('number')">Sayıya Göre</button>
+            <button class="control-btn sort" onclick="sortTiles('color')">Renge Göre</button>
+            <button class="control-btn okey" onclick="checkOkey()" id="okey-btn" disabled>OKEY!</button>
+        </div>
+
+        <!-- Alt Oyuncu (Ben) -->
+        <div id="player-bottom" class="player-area">
+            <div class="tile-rack" id="my-tiles"></div>
+            <div class="player-info active" id="info-bottom">
+                <div class="player-avatar">B</div>
+                <div class="player-details">
+                    <div class="player-name" id="my-name">Ben</div>
+                    <div class="player-tiles" id="my-tile-count">14 taş</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="turn-indicator">Sıra Sizde!</div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ==================== PEERJS YAPILANDIRMASI ====================
+        const PEER_CONFIG = {
+            debug: 3, // Debug seviyesi (0-3)
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]
+            }
+        };
+
+        // ==================== OYUN DEĞİŞKENLERİ ====================
+        const COLORS = ['red', 'blue', 'yellow', 'black'];
+        const COLOR_NAMES = { red: 'Kırmızı', blue: 'Mavi', yellow: 'Sarı', black: 'Siyah' };
+
+        let gameState = {
+            deck: [],
+            players: [{ tiles: [] }, { tiles: [] }, { tiles: [] }, { tiles: [] }],
+            currentPlayer: 0,
+            myIndex: 0,
+            indicator: null,
+            okey: null,
+            discardPile: [],
+            gameStarted: false,
+            selectedTile: null,
+            hasDrawn: false,
+            botCount: 3,
+            isOnline: false,
+            roomId: null,
+            playerNames: ['Ben', 'Bot 1', 'Bot 2', 'Bot 3']
+        };
+
+        let peer = null;
+        let connections = [];
+        let isHost = false;
+
+        // ==================== DESTE OLUŞTURMA ====================
+        function createDeck() {
+            const deck = [];
+            // Her renk için 1-13 arası 2'şer tane
+            for (let i = 0; i < 2; i++) {
+                for (const color of COLORS) {
+                    for (let num = 1; num <= 13; num++) {
+                        deck.push({ color, number: num, isJoker: false });
+                    }
+                }
+            }
+            // 2 sahte okey (joker)
+            deck.push({ color: 'black', number: 0, isJoker: true });
+            deck.push({ color: 'black', number: 0, isJoker: true });
+            return shuffleArray(deck);
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // ==================== OYUN BAŞLATMA ====================
+        function dealTiles() {
+            gameState.deck = createDeck();
+
+            // Gösterge taşını belirle
+            gameState.indicator = gameState.deck.pop();
+
+            // Okey'i belirle (göstergenin bir üstü)
+            const okeyNum = gameState.indicator.number === 13 ? 1 : gameState.indicator.number + 1;
+            gameState.okey = { color: gameState.indicator.color, number: okeyNum };
+
+            // Taşları dağıt (ilk oyuncuya 15, diğerlerine 14)
+            for (let p = 0; p < 4; p++) {
+                const count = p === 0 ? 15 : 14;
+                gameState.players[p].tiles = gameState.deck.splice(0, count);
+            }
+
+            gameState.currentPlayer = 0;
+            gameState.hasDrawn = true; // İlk oyuncu zaten 15 taş aldı
+            gameState.gameStarted = true;
+        }
+
+        function startOfflineGame() {
+            gameState.isOnline = false;
+            closeModal('bot-modal');
+
+            // İsim ayarla
+            const nameInput = document.getElementById('player-name');
+            if (nameInput && nameInput.value.trim()) {
+                gameState.playerNames[0] = nameInput.value.trim();
+            }
+
+            // Bot isimlerini güncelle
+            const botNames = ['Bot Ayşe', 'Bot Mehmet', 'Bot Zeynep'];
+            for (let i = 1; i <= 3; i++) {
+                if (i <= gameState.botCount) {
+                    gameState.playerNames[i] = botNames[i - 1];
+                } else {
+                    gameState.playerNames[i] = 'Boş';
+                }
+            }
+
+            dealTiles();
+            initGameUI();
+
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-area').classList.add('active');
+
+            renderGame();
+            showToast('Oyun başladı! Sıra sizde.');
+        }
+
+        // ==================== OYUN UI ====================
+        function initGameUI() {
+            // Oyuncu isimlerini güncelle
+            document.getElementById('my-name').textContent = gameState.playerNames[0];
+
+            const positions = ['top', 'left', 'right'];
+            positions.forEach((pos, idx) => {
+                const playerIdx = idx + 1;
+                const info = document.getElementById(`info-${pos}`);
+                if (info) {
+                    const nameEl = info.querySelector('.player-name');
+                    const avatarEl = info.querySelector('.player-avatar');
+                    if (nameEl) nameEl.textContent = gameState.playerNames[playerIdx];
+                    if (avatarEl) avatarEl.textContent = gameState.playerNames[playerIdx][0];
+                }
+            });
+
+            updateIndicator();
+        }
+
+        function updateIndicator() {
+            const indicator = document.getElementById('indicator');
+            indicator.className = `tile ${gameState.indicator.color}`;
+            indicator.textContent = gameState.indicator.number;
+        }
+
+        function renderGame() {
+            renderMyTiles();
+            updatePlayerInfos();
+            updateDeckCount();
+            updateDiscardPile();
+            updateTurnIndicator();
+            updateOkeyButton();
+        }
+
+        function renderMyTiles() {
+            const rack = document.getElementById('my-tiles');
+            rack.innerHTML = '';
+
+            gameState.players[gameState.myIndex].tiles.forEach((tile, idx) => {
+                const tileEl = createTileElement(tile, idx);
+                rack.appendChild(tileEl);
+            });
+
+            document.getElementById('my-tile-count').textContent =
+                `${gameState.players[gameState.myIndex].tiles.length} taş`;
+        }
+
+        function createTileElement(tile, idx) {
+            const div = document.createElement('div');
+            div.className = `tile ${tile.color}${tile.isJoker ? ' joker' : ''}`;
+            div.dataset.index = idx;
+
+            if (tile.isJoker) {
+                div.textContent = '★';
+            } else {
+                div.textContent = tile.number;
+                // Okey taşını işaretle
+                if (tile.color === gameState.okey.color && tile.number === gameState.okey.number) {
+                    div.classList.add('okey-tile');
+                    div.style.boxShadow = '0 0 15px gold';
+                }
+            }
+
+            div.onclick = () => selectTile(idx);
+            return div;
+        }
+
+        function selectTile(idx) {
+            if (gameState.currentPlayer !== gameState.myIndex) return;
+            if (!gameState.hasDrawn) {
+                showToast('Önce taş çekmelisiniz!');
+                return;
+            }
+
+            // Eğer aynı taş seçiliyse, atacağız
+            if (gameState.selectedTile === idx) {
+                discardTile(idx);
+                return;
+            }
+
+            // Seçimi güncelle
+            document.querySelectorAll('.tile.selected').forEach(t => t.classList.remove('selected'));
+            gameState.selectedTile = idx;
+            document.querySelector(`[data-index="${idx}"]`)?.classList.add('selected');
+
+            showToast('Atmak için tekrar tıklayın');
+        }
+
+        function discardTile(idx) {
+            if (gameState.currentPlayer !== gameState.myIndex) return;
+            if (!gameState.hasDrawn) return;
+
+            const tile = gameState.players[gameState.myIndex].tiles.splice(idx, 1)[0];
+            gameState.discardPile.push(tile);
+            gameState.selectedTile = null;
+            gameState.hasDrawn = false;
+
+            nextPlayer();
+        }
+
+        function drawTile() {
+            if (gameState.currentPlayer !== gameState.myIndex) {
+                showToast('Sıra sizde değil!');
+                return;
+            }
+            if (gameState.hasDrawn) {
+                showToast('Zaten taş çektiniz!');
+                return;
+            }
+            if (gameState.deck.length === 0) {
+                showToast('Deste bitti!');
+                return;
+            }
+
+            const tile = gameState.deck.pop();
+            gameState.players[gameState.myIndex].tiles.push(tile);
+            gameState.hasDrawn = true;
+
+            renderGame();
+            showToast('Taş çektiniz. Şimdi bir taş atın.');
+        }
+
+        function drawFromDiscard() {
+            if (gameState.currentPlayer !== gameState.myIndex) return;
+            if (gameState.hasDrawn) return;
+            if (gameState.discardPile.length === 0) return;
+
+            const tile = gameState.discardPile.pop();
+            gameState.players[gameState.myIndex].tiles.push(tile);
+            gameState.hasDrawn = true;
+
+            renderGame();
+            showToast('Çöpten taş aldınız.');
+        }
+
+        function nextPlayer() {
+            gameState.currentPlayer = (gameState.currentPlayer + 1) % 4;
+
+            // Bot sayısına göre boş oyuncuları atla
+            while (gameState.currentPlayer !== gameState.myIndex &&
+                gameState.currentPlayer > gameState.botCount) {
+                gameState.currentPlayer = (gameState.currentPlayer + 1) % 4;
+            }
+
+            gameState.hasDrawn = false;
+            renderGame();
+
+            // Bot sırası ise
+            if (gameState.currentPlayer !== gameState.myIndex) {
+                setTimeout(() => botPlay(gameState.currentPlayer), 1000);
+            }
+        }
+
+        // ==================== BOT YAPAY ZEKASI ====================
+        function botPlay(playerIdx) {
+            if (!gameState.gameStarted) return;
+
+            // Bot taş çeker
+            if (gameState.deck.length > 0) {
+                const tile = gameState.deck.pop();
+                gameState.players[playerIdx].tiles.push(tile);
+            }
+
+            // Rastgele bir taş atar
+            const tiles = gameState.players[playerIdx].tiles;
+            if (tiles.length > 0) {
+                const randomIdx = Math.floor(Math.random() * tiles.length);
+                const discarded = tiles.splice(randomIdx, 1)[0];
+                gameState.discardPile.push(discarded);
+            }
+
+            renderGame();
+
+            // Bir sonraki oyuncuya geç
+            setTimeout(() => nextPlayer(), 500);
+        }
+
+        // ==================== UI GÜNCELLEME ====================
+        function updatePlayerInfos() {
+            const positions = ['bottom', 'right', 'top', 'left'];
+
+            positions.forEach((pos, idx) => {
+                const actualIdx = (idx + gameState.myIndex) % 4;
+                const info = document.getElementById(`info-${pos}`);
+                if (!info) return;
+
+                // Aktif oyuncu vurgusu
+                if (actualIdx === gameState.currentPlayer) {
+                    info.classList.add('active');
+                } else {
+                    info.classList.remove('active');
+                }
+
+                // Taş sayısını güncelle
+                const tileCount = info.querySelector('.player-tiles');
+                if (tileCount && gameState.players[actualIdx]) {
+                    tileCount.textContent = `${gameState.players[actualIdx].tiles.length} taş`;
+                }
+            });
+        }
+
+        function updateDeckCount() {
+            document.getElementById('deck-count').textContent = gameState.deck.length;
+        }
+
+        function updateDiscardPile() {
+            const discardTop = document.getElementById('discard-top');
+            if (gameState.discardPile.length > 0) {
+                const lastTile = gameState.discardPile[gameState.discardPile.length - 1];
+                discardTop.style.visibility = 'visible';
+                discardTop.className = `tile ${lastTile.color}`;
+                discardTop.textContent = lastTile.isJoker ? '★' : lastTile.number;
+                discardTop.onclick = drawFromDiscard;
+            } else {
+                discardTop.style.visibility = 'hidden';
+            }
+        }
+
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turn-indicator');
+            if (gameState.currentPlayer === gameState.myIndex) {
+                indicator.textContent = gameState.hasDrawn ? 'Bir taş atın!' : 'Taş çekin!';
+                indicator.style.display = 'block';
+            } else {
+                indicator.textContent = `${gameState.playerNames[gameState.currentPlayer]} oynuyor...`;
+                indicator.style.display = 'block';
+            }
+        }
+
+        // ==================== SIRALAMA ====================
+        function sortTiles(by) {
+            const tiles = gameState.players[gameState.myIndex].tiles;
+
+            if (by === 'number') {
+                tiles.sort((a, b) => {
+                    if (a.isJoker) return 1;
+                    if (b.isJoker) return -1;
+                    return a.number - b.number || COLORS.indexOf(a.color) - COLORS.indexOf(b.color);
+                });
+            } else {
+                tiles.sort((a, b) => {
+                    if (a.isJoker) return 1;
+                    if (b.isJoker) return -1;
+                    return COLORS.indexOf(a.color) - COLORS.indexOf(b.color) || a.number - b.number;
+                });
+            }
+
+            renderMyTiles();
+        }
+
+        // ==================== OKEY KONTROLÜ ====================
+        function updateOkeyButton() {
+            const btn = document.getElementById('okey-btn');
+            const myTiles = gameState.players[gameState.myIndex].tiles;
+
+            // 14 veya 15 taş olmalı ve sıra bizde olmalı
+            btn.disabled = !(myTiles.length >= 14 && gameState.currentPlayer === gameState.myIndex);
+        }
+
+        function checkOkey() {
+            const tiles = [...gameState.players[gameState.myIndex].tiles];
+
+            if (tiles.length < 14) {
+                showToast('Yeterli taş yok!');
+                return;
+            }
+
+            const isValid = validateHand(tiles);
+
+            if (isValid) {
+                showToast('🎉 TEBRİKLER! OKEY yaptınız!', 5000);
+                gameState.gameStarted = false;
+                setTimeout(() => {
+                    if (confirm('Oyunu kazandınız! Yeni oyun başlatmak ister misiniz?')) {
+                        location.reload();
+                    }
+                }, 1000);
+            } else {
+                showToast('Geçerli bir el değil!');
+            }
+        }
+
+        function validateHand(tiles) {
+            // Basit doğrulama - 7 çift veya 4 seri(per) + 1 çift
+            // Bu basitleştirilmiş versiyondur
+
+            // Joker ve okey taşlarını say
+            const jokerCount = tiles.filter(t => t.isJoker ||
+                (t.color === gameState.okey.color && t.number === gameState.okey.number)).length;
+
+            // En az basit kontrol - 14 taş olmalı
+            if (tiles.length !== 14 && tiles.length !== 15) return false;
+
+            // TODO: Detaylı per ve çift kontrolü eklenebilir
+            // Şimdilik basit kontrol
+            return jokerCount >= 2; // Test için basit kontrol
+        }
+
+        // ==================== MODAL İŞLEMLERİ ====================
+        function showBotModal() {
+            document.getElementById('bot-modal').classList.add('active');
+        }
+
+        function showOnlineModal(type) {
+            if (type === 'create') {
+                document.getElementById('create-modal').classList.add('active');
+            } else {
+                document.getElementById('join-modal').classList.add('active');
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function closeOnlineModal() {
+            closeModal('create-modal');
+            if (peer) {
+                peer.destroy();
+                peer = null;
+            }
+        }
+
+        function selectBots(count) {
+            gameState.botCount = count;
+            document.querySelectorAll('.bot-option').forEach(el => {
+                el.classList.toggle('selected', parseInt(el.dataset.bots) === count);
+            });
+        }
+
+        // ==================== ONLINE FONKSİYONLAR ====================
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 5; i++) {
+                code += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return code;
+        }
+
+        function createRoom() {
+            const nameInput = document.getElementById('player-name');
+            if (!nameInput.value.trim()) {
+                showToast('Lütfen adınızı girin!');
+                return;
+            }
+
+            gameState.playerNames[0] = nameInput.value.trim();
+            const roomCode = generateRoomCode();
+
+            showToast('Oda oluşturuluyor...');
+
+            try {
+                peer = new Peer(roomCode, PEER_CONFIG);
+                isHost = true;
+                gameState.isOnline = true;
+                gameState.roomId = roomCode;
+
+                peer.on('open', (id) => {
+                    console.log('Oda oluşturuldu:', id);
+                    document.getElementById('room-code').textContent = id;
+                    document.getElementById('room-code-display').style.display = 'block';
+                    document.getElementById('players-list').style.display = 'block';
+                    document.getElementById('create-room-btn').textContent = 'Oyunu Başlat';
+                    document.getElementById('create-room-btn').onclick = startOnlineGame;
+
+                    updatePlayersList();
+                    showToast('✅ Oda oluşturuldu! Kod: ' + id);
+                });
+
+                peer.on('connection', (conn) => {
+                    console.log('Yeni oyuncu bağlanıyor...');
+
+                    conn.on('open', () => {
+                        console.log('Oyuncu bağlandı');
+                        connections.push(conn);
+                        conn.send({ type: 'welcome', hostName: gameState.playerNames[0] });
+                    });
+
+                    conn.on('data', (data) => {
+                        console.log('Veri alındı:', data);
+                        handleOnlineData(data, conn);
+                    });
+
+                    conn.on('close', () => {
+                        const idx = connections.indexOf(conn);
+                        if (idx > -1) {
+                            connections.splice(idx, 1);
+                            showToast('⚠️ Bir oyuncu ayrıldı');
+                            updatePlayersList();
+                        }
+                    });
+                });
+
+                peer.on('error', (err) => {
+                    console.error('Peer hatası:', err);
+                    if (err.type === 'unavailable-id') {
+                        showToast('Oda kodu kullanımda, yeniden deneniyor...');
+                        setTimeout(() => createRoom(), 500);
+                    } else {
+                        showToast('❌ Bağlantı hatası: ' + err.type);
+                    }
+                });
+
+                peer.on('disconnected', () => {
+                    showToast('⚠️ Bağlantı kesildi, yeniden bağlanılıyor...');
+                    peer.reconnect();
+                });
+            } catch (e) {
+                console.error('Hata:', e);
+                showToast('❌ Oda oluşturulamadı!');
+            }
+        }
+
+        function joinRoom() {
+            const nameInput = document.getElementById('join-name');
+            const roomInput = document.getElementById('room-id-input');
+
+            if (!nameInput.value.trim()) {
+                showToast('Lütfen adınızı girin!');
+                return;
+            }
+            if (!roomInput.value.trim()) {
+                showToast('Lütfen oda kodunu girin!');
+                return;
+            }
+
+            gameState.playerNames[0] = nameInput.value.trim();
+            const roomCode = roomInput.value.toUpperCase().trim();
+
+            showToast('Sunucuya bağlanılıyor...');
+
+            // Timeout kontrolü
+            let connectionTimeout = setTimeout(() => {
+                showToast('❌ Bağlantı zaman aşımına uğradı! Oda kodu doğru mu?');
+                if (peer) {
+                    peer.destroy();
+                    peer = null;
+                }
+            }, 10000);
+
+            try {
+                peer = new Peer(PEER_CONFIG);
+                gameState.isOnline = true;
+
+                peer.on('open', (myId) => {
+                    console.log('Peer açıldı, ID:', myId);
+                    showToast('Odaya bağlanılıyor: ' + roomCode);
+
+                    const conn = peer.connect(roomCode, {
+                        reliable: true,
+                        serialization: 'json'
+                    });
+
+                    if (!conn) {
+                        clearTimeout(connectionTimeout);
+                        showToast('❌ Bağlantı oluşturulamadı!');
+                        return;
+                    }
+
+                    connections.push(conn);
+
+                    conn.on('open', () => {
+                        clearTimeout(connectionTimeout);
+                        console.log('Bağlantı açıldı!');
+                        conn.send({ type: 'join', name: gameState.playerNames[0] });
+                        showToast('✅ Odaya bağlandınız! Oyun başlaması bekleniyor...');
+                    });
+
+                    conn.on('data', (data) => {
+                        console.log('Veri alındı:', data);
+                        handleOnlineData(data, conn);
+                    });
+
+                    conn.on('error', (err) => {
+                        clearTimeout(connectionTimeout);
+                        console.error('Bağlantı hatası:', err);
+                        showToast('❌ Bağlantı hatası: ' + (err.message || err));
+                    });
+
+                    conn.on('close', () => {
+                        showToast('⚠️ Bağlantı kapandı!');
+                    });
+                });
+
+                peer.on('error', (err) => {
+                    clearTimeout(connectionTimeout);
+                    console.error('Peer hatası:', err);
+                    if (err.type === 'peer-unavailable') {
+                        showToast('❌ Oda bulunamadı! Kod: ' + roomCode);
+                    } else if (err.type === 'network') {
+                        showToast('❌ Ağ hatası! İnternet bağlantınızı kontrol edin.');
+                    } else if (err.type === 'server-error') {
+                        showToast('❌ Sunucu hatası! Lütfen tekrar deneyin.');
+                    } else {
+                        showToast('❌ Hata: ' + err.type);
+                    }
+                });
+
+                peer.on('disconnected', () => {
+                    showToast('⚠️ Sunucu bağlantısı kesildi!');
+                });
+
+            } catch (e) {
+                clearTimeout(connectionTimeout);
+                console.error('Hata:', e);
+                showToast('❌ Bir hata oluştu: ' + e.message);
+            }
+        }
+
+        function handleOnlineData(data, conn) {
+            switch (data.type) {
+                case 'welcome':
+                    showToast(`${data.hostName}'ın odasına katıldınız!`);
+                    break;
+                case 'join':
+                    const idx = connections.indexOf(conn) + 1;
+                    gameState.playerNames[idx] = data.name;
+                    updatePlayersList();
+                    broadcastToAll({ type: 'playerList', names: gameState.playerNames });
+                    showToast(`${data.name} katıldı!`);
+                    break;
+                case 'playerList':
+                    gameState.playerNames = data.names;
+                    updatePlayersList();
+                    break;
+                case 'gameStart':
+                    gameState = { ...gameState, ...data.state };
+                    closeModal('join-modal');
+                    document.getElementById('main-menu').style.display = 'none';
+                    document.getElementById('game-area').classList.add('active');
+                    initGameUI();
+                    renderGame();
+                    break;
+                case 'gameUpdate':
+                    gameState = { ...gameState, ...data.state };
+                    renderGame();
+                    break;
+            }
+        }
+
+        function broadcastToAll(data) {
+            connections.forEach(conn => {
+                if (conn.open) conn.send(data);
+            });
+        }
+
+        function updatePlayersList() {
+            const list = document.getElementById('players-list');
+            list.innerHTML = '';
+
+            for (let i = 0; i < 4; i++) {
+                const slot = document.createElement('div');
+                slot.className = `player-slot ${gameState.playerNames[i] && gameState.playerNames[i] !== 'Boş' ? 'filled' : ''}`;
+                slot.innerHTML = `
+            <div class="avatar">${i + 1}</div>
+            <div class="name">${gameState.playerNames[i] || 'Bekleniyor...'}</div>
+            <div class="status">${gameState.playerNames[i] && gameState.playerNames[i] !== 'Boş' ? '✓ Hazır' : 'Boş'}</div>
+        `;
+                list.appendChild(slot);
+            }
+        }
+
+        function startOnlineGame() {
+            if (connections.length < 1) {
+                showToast('En az 2 oyuncu gerekli! Bot eklenecek.');
+            }
+
+            // Boş slotları botla doldur
+            for (let i = connections.length + 1; i < 4; i++) {
+                if (!gameState.playerNames[i] || gameState.playerNames[i] === 'Boş') {
+                    gameState.playerNames[i] = `Bot ${i}`;
+                }
+            }
+
+            dealTiles();
+
+            // Herkese oyun durumunu gönder
+            connections.forEach((conn, idx) => {
+                const playerState = { ...gameState };
+                playerState.myIndex = idx + 1;
+                conn.send({ type: 'gameStart', state: playerState });
+            });
+
+            closeModal('create-modal');
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-area').classList.add('active');
+
+            initGameUI();
+            renderGame();
+        }
+
+        // ==================== YARDIMCI ====================
+        function showToast(msg, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', duration);
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Okey Oyunu hazır!');
+        });
+    </script>
+</body>
+
+</html>
