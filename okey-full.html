@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okey Oyunu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none
+        }
+
+        :root {
+            --green: #1a6b3a;
+            --dark: #0d4d2a;
+            --gold: #ffd700;
+            --red: #e53935;
+            --blue: #1e88e5;
+            --yellow: #fbc02d;
+            --black: #333
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0d4d2a, #1a6b3a);
+            min-height: 100vh;
+            overflow: hidden
+        }
+
+        #game {
+            width: 100vw;
+            height: 100vh;
+            position: relative
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100
+        }
+
+        .top-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem
+        }
+
+        .btn-primary {
+            background: var(--gold);
+            color: #000
+        }
+
+        .btn-secondary {
+            background: #4caf50;
+            color: #fff
+        }
+
+        /* Oyuncu Alanları */
+        .player {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .player-info {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50px;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 3px solid transparent
+        }
+
+        .player-info.active {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5)
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #4caf50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 3px solid #fff
+        }
+
+        .player-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9rem
+        }
+
+        .player-tiles-back {
+            display: flex;
+            gap: 2px
+        }
+
+        .tile-back {
+            width: 25px;
+            height: 35px;
+            background: linear-gradient(135deg, #654321, #8b4513);
+            border-radius: 4px;
+            border: 1px solid #3d2817
+        }
+
+        #player-top {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: column
+        }
+
+        #player-left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%)
+        }
+
+        #player-right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%)
+        }
+
+        #player-bottom {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: column
+        }
+
+        /* Orta Alan */
+        #center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 20px;
+            align-items: center
+        }
+
+        .indicator-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center
+        }
+
+        .indicator-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            margin-bottom: 5px
+        }
+
+        .deck-area {
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        .deck-pile {
+            position: relative;
+            cursor: pointer
+        }
+
+        .deck-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--gold);
+            color: #000;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700
+        }
+
+        /* Taş Stili */
+        .tile {
+            width: 45px;
+            height: 62px;
+            background: linear-gradient(180deg, #fffef5, #f5f0e0);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: grab;
+            box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.4);
+            position: relative;
+            border: 1px solid #ccc
+        }
+
+        .tile:active {
+            cursor: grabbing
+        }
+
+        .tile.red {
+            color: var(--red)
+        }
+
+        .tile.blue {
+            color: var(--blue)
+        }
+
+        .tile.yellow {
+            color: var(--yellow)
+        }
+
+        .tile.black {
+            color: var(--black)
+        }
+
+        .tile .suit {
+            font-size: 0.6rem;
+            position: absolute;
+            bottom: 3px
+        }
+
+        .tile.joker {
+            background: linear-gradient(135deg, #fff, #ffe0b2)
+        }
+
+        .tile.okey-indicator {
+            box-shadow: 0 0 15px var(--gold)
+        }
+
+        .tile.dragging {
+            opacity: 0.5;
+            z-index: 1000
+        }
+
+        .tile.selected {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6)
+        }
+
+        /* Istaka (Taş Rafı) */
+        .rack {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            background: linear-gradient(180deg, #8b6914, #654a0e);
+            border-radius: 10px;
+            padding: 10px 15px;
+            min-height: 90px;
+            gap: 3px;
+            border: 4px solid #5c4a1f;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5)
+        }
+
+        .rack-section {
+            display: flex;
+            gap: 3px;
+            padding: 0 8px;
+            border-right: 3px solid rgba(0, 0, 0, 0.3);
+            min-width: 60px;
+            min-height: 70px;
+            align-items: flex-end
+        }
+
+        .rack-section:last-child {
+            border-right: none
+        }
+
+        .rack-section.drag-over {
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 5px
+        }
+
+        .rack-placeholder {
+            width: 45px;
+            height: 62px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 6px
+        }
+
+        /* Kontrol Butonları */
+        #controls {
+            position: absolute;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px
+        }
+
+        .ctrl-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem
+        }
+
+        .ctrl-btn.sort {
+            background: linear-gradient(135deg, #2196f3, #1565c0);
+            color: #fff
+        }
+
+        .ctrl-btn.okey {
+            background: linear-gradient(135deg, var(--gold), #ffb300);
+            color: #000
+        }
+
+        .ctrl-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 10px;
+            display: none;
+            z-index: 2000
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000
+        }
+
+        .modal.active {
+            display: flex
+        }
+
+        .modal-box {
+            background: linear-gradient(145deg, #1e1e1e, #2d2d2d);
+            border-radius: 20px;
+            padding: 2rem;
+            min-width: 320px;
+            border: 1px solid rgba(255, 255, 255, 0.1)
+        }
+
+        .modal h2 {
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 1.5rem
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            text-align: center
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px
+        }
+
+        .modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer
+        }
+
+        .modal-btn.confirm {
+            background: var(--gold);
+            color: #000
+        }
+
+        .modal-btn.cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff
+        }
+
+        .bot-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0
+        }
+
+        .bot-opt {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #fff
+        }
+
+        .bot-opt.selected {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: var(--gold)
+        }
+
+        .bot-opt .num {
+            font-size: 1.5rem;
+            font-weight: 700
+        }
+
+        .bot-opt .lbl {
+            font-size: 0.65rem
+        }
+
+        .room-code {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 15px 0
+        }
+
+        .room-code .code {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 5px
+        }
+
+        .room-code .hint {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6)
+        }
+
+        .players-list {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0
+        }
+
+        .player-slot {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05)
+        }
+
+        .player-slot.filled {
+            background: rgba(76, 175, 80, 0.3)
+        }
+
+        .player-slot .slot-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+            font-size: 0.8rem
+        }
+
+        .player-slot .slot-name {
+            color: #fff;
+            flex: 1;
+            font-size: 0.85rem
+        }
+
+        .player-slot .slot-status {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.5)
+        }
+
+        .player-slot.filled .slot-status {
+            color: #4caf50
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 15px;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 0.8rem;
+            z-index: 100
+        }
+
+        .status-bar.connected {
+            background: rgba(76, 175, 80, 0.8)
+        }
+
+        #main-menu {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000
+        }
+
+        .menu-logo {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--gold);
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+            letter-spacing: 8px
+        }
+
+        .menu-sub {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem
+        }
+
+        .menu-box {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1)
+        }
+
+        .menu-btn {
+            display: block;
+            width: 260px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px
+        }
+
+        .menu-btn.primary {
+            background: linear-gradient(135deg, var(--gold), #ffb300);
+            color: #000
+        }
+
+        .menu-btn.secondary {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            color: #fff
+        }
+    </style>
+</head>
+
+<body>
+    <div id="status-bar" class="status-bar">🔄 Bağlanıyor...</div>
+
+    <div id="main-menu">
+        <div class="menu-logo">OKEY</div>
+        <div class="menu-sub">Klasik Türk Oyunu</div>
+        <div class="menu-box">
+            <button class="menu-btn primary" onclick="showModal('bot-modal')">🎮 TEK OYUNCU</button>
+            <button class="menu-btn secondary" onclick="showModal('create-modal')">🌐 ODA OLUŞTUR</button>
+            <button class="menu-btn secondary" onclick="showModal('join-modal')">🔗 ODAYA KATIL</button>
+        </div>
+    </div>
+
+    <div id="bot-modal" class="modal">
+        <div class="modal-box">
+            <h2>🤖 Bot Sayısı</h2>
+            <div class="bot-options">
+                <div class="bot-opt" onclick="selectBots(1)">
+                    <div class="num">1</div>
+                    <div class="lbl">Bot</div>
+                </div>
+                <div class="bot-opt selected" onclick="selectBots(2)">
+                    <div class="num">2</div>
+                    <div class="lbl">Bot</div>
+                </div>
+                <div class="bot-opt" onclick="selectBots(3)">
+                    <div class="num">3</div>
+                    <div class="lbl">Bot</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="hideModal('bot-modal')">İptal</button>
+                <button class="modal-btn confirm" onclick="startOffline()">Başla</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-modal" class="modal">
+        <div class="modal-box">
+            <h2>🌐 Oda Oluştur</h2>
+            <input type="text" class="modal-input" id="host-name" placeholder="Adınız" maxlength="12">
+            <div class="room-code" id="room-display" style="display:none">
+                <div class="hint">Oda Kodu</div>
+                <div class="code" id="room-code">----</div>
+                <div class="hint">Arkadaşlarınıza gönderin</div>
+            </div>
+            <div class="players-list" id="players-list" style="display:none"></div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="leaveRoom()">İptal</button>
+                <button class="modal-btn confirm" id="create-btn" onclick="createRoom()">Oda Oluştur</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="join-modal" class="modal">
+        <div class="modal-box">
+            <h2>🔗 Odaya Katıl</h2>
+            <input type="text" class="modal-input" id="join-name" placeholder="Adınız" maxlength="12">
+            <input type="text" class="modal-input" id="join-code" placeholder="Oda Kodu" maxlength="4"
+                style="text-transform:uppercase;letter-spacing:5px;font-size:1.5rem">
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="hideModal('join-modal')">İptal</button>
+                <button class="modal-btn confirm" onclick="joinRoom()">Katıl</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game" style="display:none">
+        <div class="top-bar">
+            <button class="top-btn btn-secondary" onclick="location.reload()">🔄 YENİ OYUN</button>
+        </div>
+
+        <div id="player-top" class="player">
+            <div class="player-info" id="info-top">
+                <div class="avatar">🤖</div>
+                <div class="player-name" id="name-top">Bot</div>
+            </div>
+        </div>
+        <div id="player-left" class="player">
+            <div class="player-info" id="info-left">
+                <div class="avatar">🤖</div>
+                <div class="player-name" id="name-left">Bot</div>
+            </div>
+        </div>
+        <div id="player-right" class="player">
+            <div class="player-info" id="info-right">
+                <div class="avatar">🤖</div>
+                <div class="player-name" id="name-right">Bot</div>
+            </div>
+        </div>
+
+        <div id="center">
+            <div class="indicator-box">
+                <div class="indicator-label">Gösterge</div>
+                <div class="tile" id="indicator">?</div>
+            </div>
+            <div class="deck-area">
+                <div class="deck-pile" onclick="drawFromDeck()">
+                    <div class="tile" style="background:linear-gradient(135deg,#654321,#8b4513);color:transparent">X
+                    </div>
+                    <div class="deck-count" id="deck-count">56</div>
+                </div>
+                <div class="deck-pile" onclick="drawFromDiscard()">
+                    <div class="tile" id="discard-tile" style="visibility:hidden">?</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <button class="ctrl-btn sort" onclick="sortByNum()">🔢 SERİ DİZ</button>
+            <button class="ctrl-btn sort" onclick="sortByColor()">🎨 ÇİFT DİZ</button>
+            <button class="ctrl-btn okey" id="okey-btn" onclick="checkOkey()" disabled>✅ OKEY!</button>
+        </div>
+
+        <div class="rack" id="rack"></div>
+
+        <div id="player-bottom" class="player">
+            <div class="player-info active" id="info-bottom">
+                <div class="avatar">👤</div>
+                <div class="player-name" id="name-bottom">Ben</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyCVnIYIZB__TcudndoCezD6ePPlq6dlqdw", authDomain: "okey-oyunu-b4c98.firebaseapp.com", databaseURL: "https://okey-oyunu-b4c98-default-rtdb.europe-west1.firebasedatabase.app", projectId: "okey-oyunu-b4c98", storageBucket: "okey-oyunu-b4c98.firebasestorage.app", messagingSenderId: "483451129574", appId: "1:483451129574:web:42291005cd30c42df33527" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const COLORS = ['red', 'blue', 'yellow', 'black'];
+        const SUITS = { red: '♥', blue: '♦', yellow: '♠', black: '♣' };
+        let G = { deck: [], players: [{ tiles: [], score: 20 }, { tiles: [], score: 20 }, { tiles: [], score: 20 }, { tiles: [], score: 20 }], current: 0, myIdx: 0, indicator: null, okey: null, discard: [], started: false, hasDrawn: false, botCount: 2, online: false, room: null, names: ['Ben', 'Bot 1', 'Bot 2', 'Bot 3'], sections: [[], [], [], [], [], [], []] };
+        let roomRef = null, isHost = false, myPid = 0, dragTile = null, dragFrom = null;
+
+        db.ref('.info/connected').on('value', s => { const b = document.getElementById('status-bar'); if (s.val()) { b.textContent = '✅ Bağlı'; b.className = 'status-bar connected' } else { b.textContent = '❌ Bağlantı yok'; b.className = 'status-bar' } });
+
+        function showModal(id) { document.getElementById(id).classList.add('active') }
+        function hideModal(id) { document.getElementById(id).classList.remove('active') }
+        function toast(m, d = 2500) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', d) }
+        function selectBots(n) { G.botCount = n; document.querySelectorAll('.bot-opt').forEach((e, i) => e.classList.toggle('selected', i + 1 === n)) }
+
+        function createDeck() { let d = []; for (let i = 0; i < 2; i++)for (let c of COLORS) for (let n = 1; n <= 13; n++)d.push({ c, n, j: false }); d.push({ c: 'black', n: 0, j: true }, { c: 'black', n: 0, j: true }); return shuffle(d) }
+        function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]] } return a }
+
+        function deal() { G.deck = createDeck(); G.indicator = G.deck.pop(); G.okey = { c: G.indicator.c, n: G.indicator.n === 13 ? 1 : G.indicator.n + 1 }; for (let p = 0; p < 4; p++)G.players[p].tiles = G.deck.splice(0, p === 0 ? 15 : 14); G.current = 0; G.hasDrawn = true; G.started = true; G.discard = []; distributeToSections() }
+
+        function distributeToSections() { G.sections = [[], [], [], [], [], [], []]; const tiles = G.players[G.myIdx].tiles; tiles.forEach((t, i) => { const sec = Math.min(6, Math.floor(i / 3)); G.sections[sec].push(t) }) }
+
+        function startOffline() { G.online = false; const names = ['Bot Ayşe', 'Bot Mehmet', 'Bot Zeynep']; for (let i = 1; i <= 3; i++)G.names[i] = i <= G.botCount ? names[i - 1] : ''; deal(); hideModal('bot-modal'); startGame() }
+
+        function startGame() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('game').style.display = 'block'; initUI(); render(); toast('Oyun başladı! Sıra sizde.') }
+
+        function initUI() { document.getElementById('name-bottom').textContent = G.names[0];['right', 'top', 'left'].forEach((p, i) => { const idx = (G.myIdx + i + 1) % 4; document.getElementById('name-' + p).textContent = G.names[idx] || 'Boş'; document.getElementById('info-' + p).style.display = G.names[idx] ? 'flex' : 'none' }); const ind = document.getElementById('indicator'); ind.className = 'tile ' + G.indicator.c; ind.innerHTML = G.indicator.n + '<span class="suit">' + SUITS[G.indicator.c] + '</span>' }
+
+        function render() { renderRack(); document.getElementById('deck-count').textContent = G.deck.length; renderDiscard(); updateActive(); document.getElementById('okey-btn').disabled = !(G.current === G.myIdx && G.hasDrawn && getTileCount() >= 14) }
+
+        function getTileCount() { return G.sections.reduce((a, s) => a + s.length, 0) }
+
+        function renderRack() {
+            const rack = document.getElementById('rack'); rack.innerHTML = ''; G.sections.forEach((sec, si) => {
+                const div = document.createElement('div'); div.className = 'rack-section'; div.dataset.section = si; div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over') }; div.ondragleave = () => div.classList.remove('drag-over'); div.ondrop = e => { e.preventDefault(); div.classList.remove('drag-over'); dropTile(si) };
+                sec.forEach((t, ti) => { const tile = createTile(t); tile.draggable = true; tile.dataset.section = si; tile.dataset.index = ti; tile.ondragstart = e => { dragTile = t; dragFrom = { s: si, i: ti }; tile.classList.add('dragging') }; tile.ondragend = () => tile.classList.remove('dragging'); tile.onclick = () => selectTileForDiscard(si, ti); div.appendChild(tile) });
+                if (sec.length === 0) { const ph = document.createElement('div'); ph.className = 'rack-placeholder'; div.appendChild(ph) }
+                rack.appendChild(div)
+            })
+        }
+
+        function createTile(t) { const d = document.createElement('div'); d.className = 'tile ' + t.c + (t.j ? ' joker' : ''); if (isOkey(t)) d.classList.add('okey-indicator'); d.innerHTML = t.j ? '★' : t.n + '<span class="suit">' + SUITS[t.c] + '</span>'; return d }
+
+        function isOkey(t) { return !t.j && t.c === G.okey.c && t.n === G.okey.n }
+
+        function dropTile(targetSec) { if (!dragTile || dragFrom === null) return; G.sections[dragFrom.s].splice(dragFrom.i, 1); G.sections[targetSec].push(dragTile); dragTile = null; dragFrom = null; renderRack() }
+
+        function selectTileForDiscard(s, i) {
+            if (G.current !== G.myIdx) { toast('Sıra sizde değil!'); return } if (!G.hasDrawn) { toast('Önce taş çekin!'); return }
+            const tiles = document.querySelectorAll('.rack-section .tile'); tiles.forEach(t => t.classList.remove('selected')); const sec = document.querySelectorAll('.rack-section')[s]; if (sec && sec.children[i]) sec.children[i].classList.add('selected');
+            if (G.selectedTile && G.selectedTile.s === s && G.selectedTile.i === i) { discardTile(s, i); G.selectedTile = null } else { G.selectedTile = { s, i }; toast('Atmak için tekrar tıklayın') }
+        }
+
+        function discardTile(s, i) { const t = G.sections[s].splice(i, 1)[0]; G.discard.push(t); G.hasDrawn = false; G.selectedTile = null; syncAndNext() }
+
+        function drawFromDeck() {
+            if (G.current !== G.myIdx) { toast('Sıra sizde değil!'); return } if (G.hasDrawn) { toast('Zaten taş çektiniz!'); return } if (G.deck.length === 0) { toast('Deste bitti!'); endGame(); return }
+            const t = G.deck.pop(); G.sections[0].push(t); G.hasDrawn = true; render(); sync(); toast('Taş çektiniz: ' + (t.j ? 'Joker' : t.n))
+        }
+
+        function drawFromDiscard() { if (G.current !== G.myIdx || G.hasDrawn || G.discard.length === 0) return; const t = G.discard.pop(); G.sections[0].push(t); G.hasDrawn = true; render(); sync() }
+
+        function renderDiscard() { const el = document.getElementById('discard-tile'); if (G.discard.length > 0) { const t = G.discard[G.discard.length - 1]; el.style.visibility = 'visible'; el.className = 'tile ' + t.c; el.innerHTML = t.j ? '★' : t.n + '<span class="suit">' + SUITS[t.c] + '</span>' } else el.style.visibility = 'hidden' }
+
+        function updateActive() { ['bottom', 'right', 'top', 'left'].forEach((p, i) => { const idx = (G.myIdx + i) % 4; document.getElementById('info-' + p).classList.toggle('active', idx === G.current) }) }
+
+        function syncAndNext() { next(); render(); sync() }
+
+        function next() { G.current = (G.current + 1) % 4; while (!G.online && G.current !== G.myIdx && !G.names[G.current]) G.current = (G.current + 1) % 4; G.hasDrawn = false; if (!G.online && G.current !== G.myIdx && G.names[G.current]) setTimeout(() => botPlay(G.current), 800) }
+
+        function botPlay(idx) { if (!G.started || !G.names[idx]) return; if (G.deck.length > 0) G.players[idx].tiles.push(G.deck.pop()); if (G.players[idx].tiles.length > 0) { const ri = Math.floor(Math.random() * G.players[idx].tiles.length); G.discard.push(G.players[idx].tiles.splice(ri, 1)[0]) } render(); setTimeout(() => { next(); render() }, 500) }
+
+        function sync() { if (G.online && roomRef) { const state = { ...G }; state.sections = G.sections; roomRef.child('state').set(JSON.parse(JSON.stringify(state))) } }
+
+        function sortByNum() { G.sections.forEach(s => s.sort((a, b) => { if (a.j) return 1; if (b.j) return -1; return a.n - b.n || COLORS.indexOf(a.c) - COLORS.indexOf(b.c) })); renderRack() }
+        function sortByColor() { G.sections.forEach(s => s.sort((a, b) => { if (a.j) return 1; if (b.j) return -1; return COLORS.indexOf(a.c) - COLORS.indexOf(b.c) || a.n - b.n })); renderRack() }
+
+        // Per Kontrolü
+        function checkOkey() {
+            const allTiles = G.sections.flat(); if (allTiles.length < 14) { toast('Yeterli taş yok!'); return }
+            const result = validateHand(allTiles); if (result.valid) { const isOkeyFinish = G.discard.length > 0 && isOkey(G.discard[G.discard.length - 1]); const points = isOkeyFinish ? 4 : 2; toast('🎉 OKEY! Tebrikler! +' + (isOkeyFinish ? 'Çift' : 'Normal') + ' puan!', 5000); G.started = false; setTimeout(() => { if (confirm('Kazandınız! Yeni oyun?')) location.reload() }, 1500) } else { toast('❌ Geçersiz el! ' + result.reason) }
+        }
+
+        function validateHand(tiles) {
+            const groups = G.sections.filter(s => s.length >= 3);
+            if (groups.length === 0) return { valid: false, reason: 'En az 3 taşlık gruplar oluşturun' };
+
+            // Her grubu kontrol et
+            for (let g of groups) {
+                if (g.length < 3) continue;
+                const isSeq = isSequence(g);
+                const isSet = isColorSet(g);
+                if (!isSeq && !isSet) return { valid: false, reason: 'Geçersiz grup bulundu' };
+            }
+
+            // 7 çift kontrolü
+            const pairs = countPairs(tiles);
+            if (pairs >= 7) return { valid: true, type: 'pairs' };
+
+            // Tüm taşlar gruplarda mı?
+            const grouped = groups.reduce((a, g) => a + g.length, 0);
+            const single = G.sections.filter(s => s.length < 3).reduce((a, s) => a + s.length, 0);
+            if (single > 1) return { valid: false, reason: 'Gruplandırılmamış taşlar var' };
+
+            return { valid: true, type: 'normal' };
+        }
+
+        function isSequence(tiles) {
+            if (tiles.length < 3) return false;
+            const real = tiles.filter(t => !t.j && !isOkey(t));
+            const jokers = tiles.length - real.length;
+            if (real.length === 0) return true;
+            const color = real[0].c;
+            if (!real.every(t => t.c === color)) return false;
+            const nums = real.map(t => t.n).sort((a, b) => a - b);
+            let gaps = 0;
+            for (let i = 1; i < nums.length; i++) {
+                const diff = nums[i] - nums[i - 1];
+                if (diff === 0) return false;
+                if (diff > 1) gaps += diff - 1;
+            }
+            return gaps <= jokers;
+        }
+
+        function isColorSet(tiles) {
+            if (tiles.length < 3 || tiles.length > 4) return false;
+            const real = tiles.filter(t => !t.j && !isOkey(t));
+            if (real.length === 0) return true;
+            const num = real[0].n;
+            if (!real.every(t => t.n === num)) return false;
+            const colors = new Set(real.map(t => t.c));
+            return colors.size === real.length;
+        }
+
+        function countPairs(tiles) {
+            const map = {};
+            tiles.forEach(t => { if (!t.j) { const k = t.c + t.n; map[k] = (map[k] || 0) + 1 } });
+            return Object.values(map).filter(c => c >= 2).length;
+        }
+
+        function endGame() { toast('Oyun bitti - berabere!'); G.started = false }
+
+        // Online
+        function genCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r = ''; for (let i = 0; i < 4; i++)r += c[Math.floor(Math.random() * c.length)]; return r }
+
+        async function createRoom() {
+            const name = document.getElementById('host-name').value.trim(); if (!name) { toast('Ad girin!'); return }
+            const code = genCode(); G.room = code; G.names[0] = name; isHost = true; myPid = 0; G.online = true;
+            roomRef = db.ref('rooms/' + code);
+            const ex = await roomRef.once('value'); if (ex.exists()) return createRoom();
+            await roomRef.set({ host: name, players: { 0: { name, ready: true } }, status: 'waiting', created: Date.now() });
+            roomRef.onDisconnect().remove();
+            document.getElementById('room-code').textContent = code;
+            document.getElementById('room-display').style.display = 'block';
+            document.getElementById('players-list').style.display = 'block';
+            document.getElementById('create-btn').textContent = 'Oyunu Başlat';
+            document.getElementById('create-btn').onclick = startOnline;
+            roomRef.child('players').on('value', s => { updatePlayersList(s.val() || {}) });
+            roomRef.child('state').on('value', s => { if (s.exists() && !isHost) loadState(s.val()) });
+            toast('Oda: ' + code)
+        }
+
+        function updatePlayersList(players) { const list = document.getElementById('players-list'); list.innerHTML = ''; for (let i = 0; i < 4; i++) { const p = players[i]; const div = document.createElement('div'); div.className = 'player-slot' + (p ? ' filled' : ''); div.innerHTML = `<div class="slot-avatar">${i + 1}</div><div class="slot-name">${p ? p.name : 'Boş'}</div><div class="slot-status">${p ? '✓ Hazır' : 'Bekleniyor'}</div>`; list.appendChild(div); if (p) G.names[i] = p.name } }
+
+        async function joinRoom() {
+            const name = document.getElementById('join-name').value.trim(); const code = document.getElementById('join-code').value.toUpperCase().trim(); if (!name) { toast('Ad girin!'); return } if (code.length < 4) { toast('Kod girin!'); return }
+            roomRef = db.ref('rooms/' + code); const snap = await roomRef.once('value'); if (!snap.exists()) { toast('Oda yok: ' + code); return }
+            const room = snap.val(); if (room.status !== 'waiting') { toast('Oyun başlamış!'); return }
+            const players = room.players || {}; let slot = -1; for (let i = 1; i < 4; i++)if (!players[i]) { slot = i; break }
+            if (slot === -1) { toast('Oda dolu!'); return }
+            myPid = slot; G.myIdx = slot; G.room = code; G.names[slot] = name; isHost = false; G.online = true;
+            await roomRef.child('players/' + slot).set({ name, ready: true });
+            roomRef.child('players/' + slot).onDisconnect().remove();
+            roomRef.child('state').on('value', s => { if (s.exists()) loadState(s.val()) });
+            roomRef.child('players').on('value', s => { Object.entries(s.val() || {}).forEach(([k, v]) => G.names[parseInt(k)] = v.name) });
+            hideModal('join-modal'); document.getElementById('main-menu').innerHTML = `<div class="menu-logo">OKEY</div><div class="menu-sub">Oda: ${code}</div><div class="menu-box"><p style="color:#fff;text-align:center">Oyun bekleniyor...</p></div>`;
+            toast('Odaya katıldınız!')
+        }
+
+        async function startOnline() { if (!isHost) return; for (let i = 0; i < 4; i++)if (!G.names[i]) G.names[i] = 'Bot ' + i; deal(); await roomRef.update({ status: 'playing', state: JSON.parse(JSON.stringify(G)) }); hideModal('create-modal'); startGame() }
+
+        function loadState(s) { Object.assign(G, s); G.myIdx = myPid; distributeToSections(); hideModal('create-modal'); hideModal('join-modal'); if (!G.started) { G.started = true; document.getElementById('main-menu').style.display = 'none'; document.getElementById('game').style.display = 'block'; initUI() } render() }
+
+        function leaveRoom() { if (roomRef) { if (isHost) roomRef.remove(); else if (myPid) roomRef.child('players/' + myPid).remove() } location.reload() }
+    </script>
+</body>
+
+</html>
