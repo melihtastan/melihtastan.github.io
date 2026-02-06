@@ -749,26 +749,94 @@
 
         function startGame() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('game').style.display = 'block'; initUI(); render(); toast('Oyun başladı! Sıra sizde.') }
 
-        function initUI() { document.getElementById('name-bottom').textContent = G.names[0];['right', 'top', 'left'].forEach((p, i) => { const idx = (G.myIdx + i + 1) % 4; document.getElementById('name-' + p).textContent = G.names[idx] || 'Boş'; document.getElementById('info-' + p).style.display = G.names[idx] ? 'flex' : 'none' }); const ind = document.getElementById('indicator'); ind.className = 'tile ' + G.indicator.c; ind.innerHTML = G.indicator.n + '<span class="suit">' + SUITS[G.indicator.c] + '</span>' }
+        function initUI() {
+            document.getElementById('name-bottom').textContent = G.names[G.myIdx];
+            // Saat yönünün tersine: right=önceki(sıradaki), top=karşı, left=sonraki
+            const posMap = {
+                'right': (G.myIdx + 3) % 4,  // Sıradaki oyuncu (saat yönü tersi)
+                'top': (G.myIdx + 2) % 4,    // Karşı
+                'left': (G.myIdx + 1) % 4    // Sonraki
+            };
+            for (const [pos, idx] of Object.entries(posMap)) {
+                document.getElementById('name-' + pos).textContent = G.names[idx] || 'Boş';
+                document.getElementById('info-' + pos).style.display = G.names[idx] ? 'flex' : 'none';
+            }
+            const ind = document.getElementById('indicator');
+            ind.className = 'tile ' + G.indicator.c;
+            ind.innerHTML = G.indicator.n + '<span class="suit">' + SUITS[G.indicator.c] + '</span>';
+        }
 
         function render() { renderRack(); document.getElementById('deck-count').textContent = G.deck.length; renderDiscard(); updateActive(); document.getElementById('okey-btn').disabled = !(G.current === G.myIdx && G.hasDrawn && getTileCount() >= 14) }
 
         function getTileCount() { return G.sections.reduce((a, s) => a + s.length, 0) }
 
         function renderRack() {
-            const rack = document.getElementById('rack'); rack.innerHTML = ''; G.sections.forEach((sec, si) => {
-                const div = document.createElement('div'); div.className = 'rack-section'; div.dataset.section = si; div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over') }; div.ondragleave = () => div.classList.remove('drag-over'); div.ondrop = e => { e.preventDefault(); div.classList.remove('drag-over'); dropTile(si) };
-                sec.forEach((t, ti) => { const tile = createTile(t); tile.draggable = true; tile.dataset.section = si; tile.dataset.index = ti; tile.ondragstart = e => { dragTile = t; dragFrom = { s: si, i: ti }; tile.classList.add('dragging') }; tile.ondragend = () => tile.classList.remove('dragging'); tile.onclick = () => selectTileForDiscard(si, ti); div.appendChild(tile) });
-                if (sec.length === 0) { const ph = document.createElement('div'); ph.className = 'rack-placeholder'; div.appendChild(ph) }
-                rack.appendChild(div)
-            })
+            const rack = document.getElementById('rack');
+            rack.innerHTML = '';
+
+            G.sections.forEach((sec, si) => {
+                const div = document.createElement('div');
+                div.className = 'rack-section';
+                div.dataset.section = si;
+
+                // Section drop handler
+                div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over'); };
+                div.ondragleave = () => div.classList.remove('drag-over');
+                div.ondrop = e => { e.preventDefault(); div.classList.remove('drag-over'); dropTile(si, -1); };
+
+                sec.forEach((t, ti) => {
+                    const tile = createTile(t);
+                    tile.draggable = true;
+                    tile.dataset.section = si;
+                    tile.dataset.index = ti;
+
+                    tile.ondragstart = e => {
+                        dragTile = t;
+                        dragFrom = { s: si, i: ti };
+                        tile.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                    };
+                    tile.ondragend = () => tile.classList.remove('dragging');
+
+                    // Her taşın üzerine drop yapılabilir (önüne ekler)
+                    tile.ondragover = e => { e.preventDefault(); e.stopPropagation(); tile.style.marginLeft = '20px'; };
+                    tile.ondragleave = e => { tile.style.marginLeft = ''; };
+                    tile.ondrop = e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        tile.style.marginLeft = '';
+                        dropTile(si, ti);
+                    };
+
+                    tile.onclick = () => selectTileForDiscard(si, ti);
+                    div.appendChild(tile);
+                });
+
+                if (sec.length === 0) {
+                    const ph = document.createElement('div');
+                    ph.className = 'rack-placeholder';
+                    div.appendChild(ph);
+                }
+                rack.appendChild(div);
+            });
         }
 
         function createTile(t) { const d = document.createElement('div'); d.className = 'tile ' + t.c + (t.j ? ' joker' : ''); if (isOkey(t)) d.classList.add('okey-indicator'); d.innerHTML = t.j ? '★' : t.n + '<span class="suit">' + SUITS[t.c] + '</span>'; return d }
 
         function isOkey(t) { return !t.j && t.c === G.okey.c && t.n === G.okey.n }
 
-        function dropTile(targetSec) { if (!dragTile || dragFrom === null) return; G.sections[dragFrom.s].splice(dragFrom.i, 1); G.sections[targetSec].push(dragTile); dragTile = null; dragFrom = null; renderRack() }
+        function dropTile(targetSec, insertIdx = -1) {
+            if (!dragTile || dragFrom === null) return;
+            G.sections[dragFrom.s].splice(dragFrom.i, 1);
+            if (insertIdx >= 0 && insertIdx < G.sections[targetSec].length) {
+                G.sections[targetSec].splice(insertIdx, 0, dragTile);
+            } else {
+                G.sections[targetSec].push(dragTile);
+            }
+            dragTile = null;
+            dragFrom = null;
+            renderRack();
+        }
 
         function selectTileForDiscard(s, i) {
             if (G.current !== G.myIdx) { toast('Sıra sizde değil!'); return } if (!G.hasDrawn) { toast('Önce taş çekin!'); return }
@@ -787,13 +855,65 @@
 
         function renderDiscard() { const el = document.getElementById('discard-tile'); if (G.discard.length > 0) { const t = G.discard[G.discard.length - 1]; el.style.visibility = 'visible'; el.className = 'tile ' + t.c; el.innerHTML = t.j ? '★' : t.n + '<span class="suit">' + SUITS[t.c] + '</span>' } else el.style.visibility = 'hidden' }
 
-        function updateActive() { ['bottom', 'right', 'top', 'left'].forEach((p, i) => { const idx = (G.myIdx + i) % 4; document.getElementById('info-' + p).classList.toggle('active', idx === G.current) }) }
+        // Saat yönünün tersine: bottom=ben, right=önceki(sıradaki), top=karşı, left=sonraki
+        function updateActive() {
+            // Pozisyonlar: bottom=myIdx, right=myIdx+3 (önceki=sıradaki), top=myIdx+2 (karşı), left=myIdx+1 (sonraki)
+            const positions = {
+                'bottom': G.myIdx,
+                'right': (G.myIdx + 3) % 4,  // Saat yönünün tersinde sıradaki
+                'top': (G.myIdx + 2) % 4,    // Karşı
+                'left': (G.myIdx + 1) % 4    // Sonraki
+            };
+            for (const [pos, idx] of Object.entries(positions)) {
+                document.getElementById('info-' + pos).classList.toggle('active', idx === G.current);
+            }
+        }
 
         function syncAndNext() { next(); render(); sync() }
 
-        function next() { G.current = (G.current + 1) % 4; while (!G.online && G.current !== G.myIdx && !G.names[G.current]) G.current = (G.current + 1) % 4; G.hasDrawn = false; if (!G.online && G.current !== G.myIdx && G.names[G.current]) setTimeout(() => botPlay(G.current), 800) }
+        // Saat yönünün tersine (counter-clockwise)
+        function next() {
+            G.current = (G.current + 3) % 4; // +3 = -1 mod 4 = saat yönünün tersi
+            // Boş oyuncuları atla
+            let attempts = 0;
+            while (!G.online && G.current !== G.myIdx && !G.names[G.current] && attempts < 4) {
+                G.current = (G.current + 3) % 4;
+                attempts++;
+            }
+            G.hasDrawn = false;
+            // Bot sırası geldiyse oyna
+            if (!G.online && G.current !== G.myIdx && G.names[G.current]) {
+                setTimeout(() => botPlay(G.current), 1000);
+            }
+        }
 
-        function botPlay(idx) { if (!G.started || !G.names[idx]) return; if (G.deck.length > 0) G.players[idx].tiles.push(G.deck.pop()); if (G.players[idx].tiles.length > 0) { const ri = Math.floor(Math.random() * G.players[idx].tiles.length); G.discard.push(G.players[idx].tiles.splice(ri, 1)[0]) } render(); setTimeout(() => { next(); render() }, 500) }
+        function botPlay(idx) {
+            if (!G.started || !G.names[idx]) return;
+            console.log('Bot oynuyor:', G.names[idx]);
+
+            // Bot taş çeker
+            if (G.deck.length > 0) {
+                const tile = G.deck.pop();
+                G.players[idx].tiles.push(tile);
+                console.log('Bot taş çekti');
+            }
+
+            // Bot rastgele taş atar
+            if (G.players[idx].tiles.length > 0) {
+                const ri = Math.floor(Math.random() * G.players[idx].tiles.length);
+                const discarded = G.players[idx].tiles.splice(ri, 1)[0];
+                G.discard.push(discarded);
+                console.log('Bot taş attı:', discarded);
+            }
+
+            render();
+
+            // Sonraki oyuncuya geç
+            setTimeout(() => {
+                next();
+                render();
+            }, 800);
+        }
 
         function sync() { if (G.online && roomRef) { const state = { ...G }; state.sections = G.sections; roomRef.child('state').set(JSON.parse(JSON.stringify(state))) } }
 
