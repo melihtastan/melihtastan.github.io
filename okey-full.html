@@ -902,9 +902,45 @@
             toast('Odaya katıldınız!')
         }
 
-        async function startOnline() { if (!isHost) return; for (let i = 0; i < 4; i++)if (!G.names[i]) G.names[i] = 'Bot ' + i; deal(); await roomRef.update({ status: 'playing', state: JSON.parse(JSON.stringify(G)) }); hideModal('create-modal'); startGame() }
+        async function startOnline() {
+            if (!isHost) return;
+            for (let i = 0; i < 4; i++) if (!G.names[i]) G.names[i] = 'Bot ' + i;
+            deal();
+            G.started = true;
+            const stateToSave = JSON.parse(JSON.stringify(G));
+            await roomRef.update({ status: 'playing', state: stateToSave });
+            hideModal('create-modal');
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            initUI();
+            render();
+            toast('Oyun başladı!');
+        }
 
-        function loadState(s) { Object.assign(G, s); G.myIdx = myPid; distributeToSections(); hideModal('create-modal'); hideModal('join-modal'); if (!G.started) { G.started = true; document.getElementById('main-menu').style.display = 'none'; document.getElementById('game').style.display = 'block'; initUI() } render() }
+        function loadState(s) {
+            console.log('State yükleniyor:', s);
+            Object.assign(G, s);
+            G.myIdx = myPid;
+
+            // Taşları sections'a dağıt (kendi taşlarımız)
+            if (G.players && G.players[myPid] && G.players[myPid].tiles) {
+                G.sections = [[], [], [], [], [], [], []];
+                G.players[myPid].tiles.forEach((t, i) => {
+                    const sec = Math.min(6, Math.floor(i / 3));
+                    G.sections[sec].push(t);
+                });
+            }
+
+            hideModal('create-modal');
+            hideModal('join-modal');
+
+            // Oyun ekranını göster
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            initUI();
+            render();
+            toast('Oyun başladı!');
+        }
 
         function leaveRoom() { if (roomRef) { if (isHost) roomRef.remove(); else if (myPid) roomRef.child('players/' + myPid).remove() } location.reload() }
     </script>
