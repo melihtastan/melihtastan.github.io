@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Türk Okey Oyunu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        :root {
+            --bg: #0d5c2d;
+            --dark: #063d1c;
+            --gold: #ffd700;
+            --red: #dc2626;
+            --blue: #2563eb;
+            --yellow: #eab308;
+            --black: #1f2937;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(ellipse at center, var(--bg), var(--dark));
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #menu {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--gold);
+            text-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+            letter-spacing: 8px;
+        }
+
+        .subtitle {
+            color: #fff;
+            opacity: 0.7;
+            margin-bottom: 2rem;
+        }
+
+        .menu-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .menu-btn {
+            display: block;
+            width: 260px;
+            padding: 14px;
+            margin: 10px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #ffd700, #f59e0b);
+            color: #000;
+        }
+
+        #game {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #game.active {
+            display: block;
+        }
+
+        #status {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            z-index: 50;
+        }
+
+        #status.myturn {
+            background: #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 0 15px rgba(34, 197, 94, 0);
+            }
+        }
+
+        .player-area {
+            position: absolute;
+        }
+
+        .player-box {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 30px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 3px solid transparent;
+        }
+
+        .player-box.active {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .player-box .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .player-box .name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .score {
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        #p-top {
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #p-left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #p-right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #p-bottom {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .cbox {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .cbox-label {
+            color: #9ca3af;
+            font-size: 0.7rem;
+            margin-bottom: 5px;
+        }
+
+        .tile {
+            width: 42px;
+            height: 56px;
+            background: linear-gradient(180deg, #fefefe, #e8e8e8);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.4rem;
+            box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.3);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .tile:hover {
+            transform: translateY(-3px);
+        }
+
+        .tile.sel {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .tile.red {
+            color: var(--red);
+        }
+
+        .tile.blue {
+            color: var(--blue);
+        }
+
+        .tile.yellow {
+            color: var(--yellow);
+        }
+
+        .tile.black {
+            color: var(--black);
+        }
+
+        .tile .suit {
+            font-size: 0.5rem;
+            position: absolute;
+            bottom: 2px;
+        }
+
+        .tile.joker {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+        }
+
+        .tile.okey {
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        .tile.back {
+            background: linear-gradient(135deg, #78350f, #92400e);
+        }
+
+        .tile.back::before {
+            content: '◆';
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 1rem;
+        }
+
+        .tile.empty {
+            background: transparent;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            box-shadow: none;
+        }
+
+        /* ISTAKA GRID SYSTEM */
+        #rack {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: grid;
+            grid-template-columns: repeat(15, 45px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 4px;
+            background: linear-gradient(180deg, #8b4513, #654321);
+            border: 4px solid #4a2511;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5), 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .rack-cell {
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .rack-cell.occupied {
+            border: none;
+        }
+
+        .rack-cell.drag-over {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: var(--gold);
+        }
+
+        .rack-tile {
+            position: absolute;
+            inset: 0;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 260px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .ctrl {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .ctrl.blue {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .ctrl.gold {
+            background: var(--gold);
+            color: #000;
+        }
+
+        .ctrl.purple {
+            background: #9333ea;
+            color: #fff;
+        }
+
+        .ctrl:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            display: none;
+            z-index: 300;
+        }
+
+        .deck-num {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--gold);
+            color: #000;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .info-panel {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 12px;
+            color: #fff;
+        }
+
+        .info-item {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-item span {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        .spacer {
+            background: rgba(255, 215, 0, 0.3);
+            border: 2px dashed var(--gold);
+            cursor: pointer;
+        }
+
+        .spacer::after {
+            content: '|';
+            color: var(--gold);
+            font-size: 1.5rem;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #1f2937;
+            padding: 2rem;
+            border-radius: 16px;
+            min-width: 320px;
+        }
+
+        .modal h2 {
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn.ok {
+            background: var(--gold);
+            color: #000;
+        }
+
+        .modal-btn.cancel {
+            background: #4b5563;
+            color: #fff;
+        }
+
+        .room-info {
+            background: rgba(255, 215, 0, 0.15);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .room-code {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 6px;
+        }
+
+        .player-list {
+            background: #111827;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 1rem 0;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin: 4px 0;
+            border-radius: 6px;
+            color: #9ca3af;
+        }
+
+        .player-item.here {
+            background: rgba(34, 197, 94, 0.2);
+            color: #fff;
+        }
+
+        .player-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6b7280;
+        }
+
+        .player-item.here .player-dot {
+            background: #22c55e;
+        }
+
+        #conn {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: #fff;
+            background: #ef4444;
+            z-index: 100;
+        }
+
+        #conn.ok {
+            background: #22c55e;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="menu">
+        <div class="logo">OKEY</div>
+        <div class="subtitle">Türk Okey Oyunu (4 Kişilik)</div>
+        <div class="menu-box">
+            <button class="menu-btn" onclick="startLocalGame()">🎮 Botlarla Oyna</button>
+            <button class="menu-btn" onclick="showModal('create')"
+                style="background: linear-gradient(135deg, #22c55e, #16a34a);">🌐 Oda Oluştur</button>
+            <button class="menu-btn" onclick="showModal('join')"
+                style="background: linear-gradient(135deg, #3b82f6, #2563eb);">🔗 Odaya Katıl</button>
+        </div>
+    </div>
+
+    <!-- Create Room Modal -->
+    <div id="m-create" class="modal">
+        <div class="modal-box">
+            <h2>🌐 Oda Oluştur</h2>
+            <input type="text" id="host-name" placeholder="Adınız" maxlength="12">
+            <div id="room-display" style="display:none">
+                <div class="room-info">
+                    <div class="room-code" id="room-code">----</div>
+                    <small>Kodu arkadaşlarınızla paylaşın</small>
+                </div>
+                <div class="player-list" id="player-list"></div>
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn cancel" onclick="cancelRoom()">İptal</button>
+                <button class="modal-btn ok" id="create-btn" onclick="createRoom()">Oluştur</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Room Modal -->
+    <div id="m-join" class="modal">
+        <div class="modal-box">
+            <h2>🔗 Odaya Katıl</h2>
+            <input type="text" id="join-name" placeholder="Adınız" maxlength="12">
+            <input type="text" id="join-code" placeholder="Oda Kodu" maxlength="4"
+                style="text-transform:uppercase;letter-spacing:5px;font-size:1.3rem">
+            <div class="modal-btns">
+                <button class="modal-btn cancel" onclick="hideModal('join')">İptal</button>
+                <button class="modal-btn ok" onclick="joinRoom()">Katıl</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wait Modal -->
+    <div id="m-wait" class="modal">
+        <div class="modal-box" style="text-align:center">
+            <h2>⏳ Bekleniyor</h2>
+            <p style="color:#9ca3af">Host oyunu başlatacak...</p>
+            <div class="modal-btns" style="margin-top:1.5rem">
+                <button class="modal-btn cancel" onclick="leaveGame()">Çıkış</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game">
+        <div id="conn">🔴 Offline</div>
+        <div id="status">Yükleniyor...</div>
+
+        <div class="info-panel">
+            <div class="info-item">
+                <span>Gösterge:</span>
+                <div class="tile" id="info-indicator" style="width:35px;height:45px;font-size:1.1rem">?</div>
+            </div>
+            <div class="info-item">
+                <span>Okey:</span>
+                <div class="tile okey" id="info-okey" style="width:35px;height:45px;font-size:1.1rem">?</div>
+            </div>
+        </div>
+
+        <div id="p-top" class="player-area">
+            <div class="player-box" id="box-0">
+                <div class="avatar">🤖</div>
+                <div>
+                    <div class="name" id="name-0">-</div>
+                    <div class="score" id="score-0">6</div>
+                </div>
+            </div>
+        </div>
+        <div id="p-left" class="player-area">
+            <div class="player-box" id="box-1">
+                <div class="avatar">🤖</div>
+                <div>
+                    <div class="name" id="name-1">-</div>
+                    <div class="score" id="score-1">6</div>
+                </div>
+            </div>
+        </div>
+        <div id="p-right" class="player-area">
+            <div class="player-box" id="box-2">
+                <div class="avatar">🤖</div>
+                <div>
+                    <div class="name" id="name-2">-</div>
+                    <div class="score" id="score-2">6</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="center">
+            <div class="cbox">
+                <div class="cbox-label">Gösterge</div>
+                <div class="tile" id="indicator">?</div>
+            </div>
+            <div class="cbox">
+                <div class="cbox-label">Deste</div>
+                <div style="position:relative;cursor:pointer" onclick="drawFromDeck()">
+                    <div class="tile back"></div>
+                    <div class="deck-num" id="deck-count">106</div>
+                </div>
+            </div>
+            <div class="cbox">
+                <div class="cbox-label">Çöp</div>
+                <div class="tile empty" id="discard" onclick="drawFromDiscard()"></div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <button class="ctrl blue" onclick="sortByNumber()">🔢 Sırala</button>
+            <button class="ctrl blue" onclick="sortByColor()">🎨 Renk</button>
+            <button class="ctrl purple" onclick="addSpacer()">➕ Ayırıcı</button>
+            <button class="ctrl purple" id="btn-double" onclick="toggleDouble()">🎲 Çifte</button>
+            <button class="ctrl gold" id="btn-okey" onclick="declareOkey()" disabled>✅ OKEY!</button>
+        </div>
+
+        <div id="rack"></div>
+
+        <div id="p-bottom" class="player-area">
+            <div class="player-box active" id="box-me">
+                <div class="avatar">👤</div>
+                <div>
+                    <div class="name" id="my-name">Ben</div>
+                    <div class="score" id="my-score">6</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, onValue, update, remove, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVnIYIZB__TcudndoCezD6ePPlq6dlqdw",
+            authDomain: "okey-oyunu-b4c98.firebaseapp.com",
+            databaseURL: "https://okey-oyunu-b4c98-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "okey-oyunu-b4c98",
+            storageBucket: "okey-oyunu-b4c98.firebasestorage.app",
+            messagingSenderId: "483451129574",
+            appId: "1:483451129574:web:42291005cd30c42df33527"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.db = getDatabase(app);
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbUpdate = update;
+        window.dbRemove = remove;
+        window.dbOnValue = onValue;
+        window.dbOnDisconnect = onDisconnect;
+
+        document.getElementById('conn').innerHTML = '🟢 Online';
+        document.getElementById('conn').className = 'ok';
+    </script>
+
+    <script>
+        const COLORS = ['red', 'blue', 'yellow', 'black'];
+        const SUITS = { red: '♥', blue: '♦', yellow: '★', black: '♣' };
+
+        let G = {
+            mode: 'local', // 'local' veya 'online'
+            roomCode: null,
+            isHost: false,
+            myPlayerId: null,
+            myId: 0,
+            names: ['Ben', 'Bot Ayşe', 'Bot Mehmet', 'Bot Zeynep'],
+            scores: [6, 6, 6, 6],
+            deck: [],
+            hands: [[], [], [], []],
+            rackLayout: {},
+            indicator: null,
+            okey: null,
+            discard: [],
+            discardHistory: [],
+            turn: 0,
+            phase: 'discard',
+            started: false,
+            doubleMode: false,
+            nextTileId: 0
+        };
+
+        let selectedTile = null;
+        let dragData = null;
+        let roomListener = null;
+
+        function toast(msg, dur = 2500) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', dur);
+        }
+
+        function showModal(id) {
+            document.getElementById('m-' + id).classList.add('show');
+        }
+
+        function hideModal(id) {
+            document.getElementById('m-' + id).classList.remove('show');
+        }
+
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 4; i++) {
+                code += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return code;
+        }
+
+        function createDeck() {
+            const deck = [];
+            for (let set = 0; set < 2; set++) {
+                for (const c of COLORS) {
+                    for (let n = 1; n <= 13; n++) {
+                        deck.push({ id: G.nextTileId++, c, n, j: false, faceDown: false });
+                    }
+                }
+            }
+            deck.push({ id: G.nextTileId++, c: 'black', n: 0, j: true, faceDown: false });
+            deck.push({ id: G.nextTileId++, c: 'black', n: 0, j: true, faceDown: false });
+
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            return deck;
+        }
+
+        function dealCards() {
+            G.deck = createDeck();
+            G.indicator = G.deck.pop();
+
+            if (G.indicator.j) {
+                G.okey = { c: 'red', n: 1 };
+            } else {
+                G.okey = { c: G.indicator.c, n: G.indicator.n === 13 ? 1 : G.indicator.n + 1 };
+            }
+
+            G.hands = [[], [], [], []];
+            G.discard = [];
+            G.discardHistory = [];
+            G.rackLayout = {};
+
+            for (let p = 0; p < 4; p++) {
+                const count = (p === 0) ? 15 : 14;
+                for (let i = 0; i < count; i++) {
+                    if (G.deck.length > 0) {
+                        const tile = G.deck.pop();
+                        if (isOkey(tile) && p === G.myId) tile.faceDown = true;
+                        G.hands[p].push(tile);
+                    }
+                }
+            }
+
+            autoArrangeRack();
+            G.turn = 0;
+            G.phase = 'discard';
+            G.started = true;
+        }
+
+        function autoArrangeRack() {
+            const myHand = G.hands[G.myId];
+            let row = 0, col = 0;
+            myHand.forEach(tile => {
+                G.rackLayout[tile.id] = { row, col };
+                col++;
+                if (col >= 15) { col = 0; row++; }
+            });
+        }
+
+        function isOkey(t) {
+            return !t.j && t.c === G.okey.c && t.n === G.okey.n;
+        }
+
+        function addSpacer() {
+            const spacer = { id: G.nextTileId++, type: 'spacer' };
+            G.hands[G.myId].push(spacer);
+            autoArrangeRack();
+            render();
+            toast('Ayırıcı eklendi - perlerinizi organize edin');
+        }
+
+        function toggleDouble() {
+            if (G.turn !== G.myId) {
+                toast('Sıra sizde değil!');
+                return;
+            }
+            G.doubleMode = !G.doubleMode;
+            toast(G.doubleMode ? 'Çifte modu: AÇIK' : 'Çifte modu: KAPALI');
+            render();
+        }
+
+        function declareOkey() {
+            const hand = G.hands[G.myId].filter(t => t.type !== 'spacer');
+
+            if (hand.length < 14) {
+                toast('Yeterli taş yok! (Min 14)');
+                return;
+            }
+
+            const sets = getSetsFromRack();
+            const validation = validateOkeyHand(sets, hand);
+
+            if (!validation.valid) {
+                toast('❌ Geçersiz El: ' + validation.reason, 3000);
+                G.scores[G.myId] -= 2;
+                render();
+                return;
+            }
+
+            const multiplier = validation.type === 'double' || validation.type === 'okey-finish' ? 4 : 2;
+
+            for (let i = 0; i < 4; i++) {
+                if (i !== G.myId) G.scores[i] -= multiplier;
+            }
+
+            toast('🎉 GEÇERLİ OKEY! Kazandınız! (+' + multiplier + ' puan)', 4000);
+            endRound(G.myId, multiplier);
+        }
+
+        function endRound(winner, multiplier) {
+            G.started = false;
+
+            setTimeout(() => {
+                // Puan 0'a düşenler var mı?
+                const losers = G.names.filter((n, i) => G.scores[i] <= 0).map((n, i) => n);
+
+                if (losers.length > 0) {
+                    const finalScores = G.names.map((n, i) => n + ': ' + G.scores[i] + ' puan').join('\n');
+                    alert('🏆 OYUN BİTTİ!\n\n' + finalScores + '\n\nKazanan: ' + G.names[winner]);
+                    location.reload();
+                } else {
+                    if (confirm('Yeni el başlat?\n\nGüncel Puanlar:\n' + G.names.map((n, i) => n + ': ' + G.scores[i]).join('\n'))) {
+                        dealCards();
+                        render();
+                    }
+                }
+            }, 2000);
+        }
+
+        function endGameDraw() {
+            G.started = false;
+            toast('🏁 Deste bitti - Berabere!', 4000);
+
+            setTimeout(() => {
+                if (confirm('Deste bitti!\n\nKimse kazanmadı (Berabere)\n\nYeni el başlat?\n\nGüncel Puanlar:\n' + G.names.map((n, i) => n + ': ' + G.scores[i]).join('\n'))) {
+                    dealCards();
+                    render();
+                } else {
+                    location.reload();
+                }
+            }, 2000);
+        }
+
+        function getSetsFromRack() {
+            const sets = [];
+            const myHand = G.hands[G.myId].filter(t => t.type !== 'spacer');
+            const spacers = G.hands[G.myId].filter(t => t.type === 'spacer');
+
+            if (spacers.length === 0) return [myHand];
+
+            const spacerPositions = spacers.map(s => {
+                const layout = G.rackLayout[s.id];
+                return layout ? layout.row * 15 + layout.col : -1;
+            }).filter(p => p >= 0).sort((a, b) => a - b);
+
+            const tilePositions = myHand.map(t => {
+                const layout = G.rackLayout[t.id];
+                return { tile: t, pos: layout ? layout.row * 15 + layout.col : -1 };
+            }).filter(tp => tp.pos >= 0).sort((a, b) => a.pos - b.pos);
+
+            let currentSet = [];
+            let lastSpacer = -1;
+
+            tilePositions.forEach(tp => {
+                const nextSpacer = spacerPositions.find(sp => sp > lastSpacer && sp < tp.pos);
+                if (nextSpacer !== undefined) {
+                    if (currentSet.length > 0) sets.push(currentSet);
+                    currentSet = [];
+                    lastSpacer = nextSpacer;
+                }
+                currentSet.push(tp.tile);
+            });
+
+            if (currentSet.length > 0) sets.push(currentSet);
+
+            return sets.length > 0 ? sets : [myHand];
+        }
+
+        function validateOkeyHand(sets, fullHand) {
+            const tiles = fullHand.filter(t => !t.faceDown);
+
+            if (tiles.length < 14) return { valid: false, reason: 'En az 14 taş gerekli' };
+
+            // 7 ÇİFT KONTROLÜ (Ayırıcı gerektirmez)
+            const pairCount = countPairs(tiles);
+            if (pairCount >= 7 && tiles.length === 14) {
+                return { valid: true, type: 'double' };
+            }
+
+            // TEK PER (Tüm taşlar tek perde) - Ayırıcı gerektirmez
+            if (sets.length === 1 && sets[0].length === tiles.length) {
+                // Tek per geçerli mi kontrol et
+                if (sets[0].length >= 14 && isValidSet(sets[0])) {
+                    return { valid: true, type: 'normal' };
+                }
+            }
+
+            // AYIRICISIZ DURUM - Otomatik per tespiti dene
+            if (sets.length === 0 || (sets.length === 1 && sets[0].length === tiles.length)) {
+                // Ayırıcı yoksa, otomatik per bulmayı dene
+                const autoPers = findAutoPers(tiles);
+                if (autoPers.valid) {
+                    return { valid: true, type: 'normal' };
+                }
+                return { valid: false, reason: 'Perlerinizi ayırıcı ile bölün veya geçerli bir el oluşturun' };
+            }
+
+            // ÇOKLU PER KONTROLÜ (Ayırıcı ile bölünmüş)
+            for (let set of sets) {
+                if (set.length < 3) {
+                    return { valid: false, reason: 'Her per en az 3 taş olmalı' };
+                }
+                if (!isValidSet(set)) {
+                    return { valid: false, reason: 'Geçersiz per bulundu' };
+                }
+            }
+
+            const usedCount = sets.reduce((sum, s) => sum + s.length, 0);
+            if (usedCount !== tiles.length) {
+                return { valid: false, reason: 'Tüm taşlar perlerde kullanılmalı' };
+            }
+
+            return { valid: true, type: 'normal' };
+        }
+
+        // Otomatik per bulma (ayırıcı olmadan)
+        function findAutoPers(tiles) {
+            if (tiles.length < 14) return { valid: false };
+
+            // Basit algoritma: Tüm taşlar tek per mi?
+            if (isValidSet(tiles)) {
+                return { valid: true };
+            }
+
+            // Daha karmaşık per kombinasyonları dene
+            // (Bu basit versiyonda sadece tek per kontrolü yapıyoruz)
+            return { valid: false };
+        }
+
+        function countPairs(tiles) {
+            const counts = {};
+            tiles.forEach(t => {
+                const key = t.c + '-' + t.n;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+            return Object.values(counts).reduce((sum, c) => sum + Math.floor(c / 2), 0);
+        }
+
+        function isValidSet(tiles) {
+            return isValidRun(tiles) || isValidGroup(tiles);
+        }
+
+        function isValidRun(tiles) {
+            const color = tiles.find(t => !t.j && !isOkey(t))?.c;
+            if (!color) return true;
+
+            for (let t of tiles) {
+                if (!t.j && !isOkey(t) && t.c !== color) return false;
+            }
+
+            const numbers = tiles.filter(t => !t.j && !isOkey(t)).map(t => t.n).sort((a, b) => a - b);
+
+            if (numbers.includes(13) && numbers.includes(1)) return false;
+
+            for (let i = 1; i < numbers.length; i++) {
+                if (numbers[i] - numbers[i - 1] > tiles.length - numbers.length + 1) return false;
+            }
+
+            return true;
+        }
+
+        function isValidGroup(tiles) {
+            const number = tiles.find(t => !t.j && !isOkey(t))?.n;
+            if (!number) return true;
+
+            for (let t of tiles) {
+                if (!t.j && !isOkey(t) && t.n !== number) return false;
+            }
+
+            const colors = tiles.filter(t => !t.j && !isOkey(t)).map(t => t.c);
+            return colors.length === new Set(colors).size;
+        }
+
+        function botPlay(pid) {
+            if (!G.started || G.turn !== pid) return;
+
+            // Online modda sadece host bot oynatsın
+            if (G.mode === 'online' && !G.isHost) return;
+
+            // Deste bittiyse oyun biter
+            if (G.deck.length === 0) {
+                endGameDraw();
+                return;
+            }
+
+            const hand = G.hands[pid];
+            const analysis = analyzeHand(hand);
+
+            const discardTop = G.discard[G.discard.length - 1];
+            let fromDiscard = false;
+            if (discardTop && isUsefulTile(discardTop, analysis)) {
+                hand.push(G.discard.pop());
+                fromDiscard = true;
+                toast(G.names[pid] + ' çöpten taş aldı', 1500);
+            } else {
+                hand.push(G.deck.pop());
+            }
+
+            setTimeout(() => {
+                const worstIdx = findWorstTileIndex(hand, analysis);
+                const discarded = hand.splice(worstIdx, 1)[0];
+                G.discard.push(discarded);
+                G.discardHistory.push(discarded);
+
+                if (canBotFinish(hand)) {
+                    const multiplier = countPairs(hand) >= 7 ? 4 : 2;
+                    for (let i = 0; i < 4; i++) {
+                        if (i !== pid) G.scores[i] -= multiplier;
+                    }
+                    toast(G.names[pid] + ' OKEY yaptı!', 4000);
+                    endRound(pid, multiplier);
+                    return;
+                }
+
+                // Deste kontrolü (atma sonrası)
+                if (G.deck.length === 0) {
+                    endGameDraw();
+                    return;
+                }
+
+                render();
+                syncGameState();
+                setTimeout(() => { nextTurn(); render(); syncGameState(); }, 600);
+            }, 1000);
+        }
+
+        function analyzeHand(hand) {
+            const runs = [];
+            const groups = [];
+
+            COLORS.forEach(color => {
+                const colorTiles = hand.filter(t => (t.c === color || t.j || isOkey(t)) && !t.faceDown)
+                    .sort((a, b) => (a.j || isOkey(a) ? 99 : a.n) - (b.j || isOkey(b) ? 99 : b.n));
+
+                for (let i = 0; i < colorTiles.length - 1; i++) {
+                    const n1 = colorTiles[i].j || isOkey(colorTiles[i]) ? null : colorTiles[i].n;
+                    const n2 = colorTiles[i + 1].j || isOkey(colorTiles[i + 1]) ? null : colorTiles[i + 1].n;
+                    if (n1 && n2 && Math.abs(n2 - n1) <= 2) {
+                        runs.push([colorTiles[i], colorTiles[i + 1]]);
+                    }
+                }
+            });
+
+            const byNumber = {};
+            hand.forEach(t => {
+                if (!t.j && !isOkey(t) && !t.faceDown) {
+                    if (!byNumber[t.n]) byNumber[t.n] = [];
+                    byNumber[t.n].push(t);
+                }
+            });
+
+            Object.values(byNumber).forEach(tiles => {
+                if (tiles.length >= 2) groups.push(tiles);
+            });
+
+            return { runs, groups };
+        }
+
+        function isUsefulTile(tile, analysis) {
+            for (let run of analysis.runs) {
+                if (run.some(t => t.c === tile.c && Math.abs(t.n - tile.n) <= 2)) return true;
+            }
+            for (let group of analysis.groups) {
+                if (group.some(t => t.n === tile.n)) return true;
+            }
+            return false;
+        }
+
+        function findWorstTileIndex(hand, analysis) {
+            const scores = hand.map(tile => {
+                if (tile.faceDown || tile.j || isOkey(tile)) return 100;
+                let score = 0;
+                if (isUsefulTile(tile, analysis)) score += 10;
+                if (tile.n >= 5 && tile.n <= 9) score += 5;
+                return score;
+            });
+            return scores.indexOf(Math.min(...scores));
+        }
+
+        function canBotFinish(hand) {
+            const tiles = hand.filter(t => !t.faceDown);
+            if (tiles.length < 14) return false;
+            if (countPairs(tiles) >= 7 && tiles.length === 14) return true;
+
+            const sets = [tiles];
+            return validateOkeyHand(sets, tiles).valid;
+        }
+
+        function render() {
+            if (!G.started) return;
+
+            const myHand = G.hands[G.myId];
+            const rack = document.getElementById('rack');
+            rack.innerHTML = '';
+
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 15; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'rack-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+
+                    const tile = myHand.find(t => {
+                        const layout = G.rackLayout[t.id];
+                        return layout && layout.row === row && layout.col === col;
+                    });
+
+                    if (tile) {
+                        cell.classList.add('occupied');
+                        const tileDiv = createTileDiv(tile);
+                        tileDiv.classList.add('rack-tile');
+                        cell.appendChild(tileDiv);
+                    }
+
+                    cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); };
+                    cell.ondragleave = () => cell.classList.remove('drag-over');
+                    cell.ondrop = (e) => {
+                        e.preventDefault();
+                        cell.classList.remove('drag-over');
+                        if (dragData) {
+                            G.rackLayout[dragData.id] = { row, col };
+                            render();
+                        }
+                    };
+
+                    rack.appendChild(cell);
+                }
+            }
+
+            document.getElementById('my-name').textContent = G.names[G.myId];
+            document.getElementById('my-score').textContent = G.scores[G.myId];
+
+            const posMap = [(G.myId + 2) % 4, (G.myId + 1) % 4, (G.myId + 3) % 4];
+            posMap.forEach((pid, i) => {
+                document.getElementById('name-' + i).textContent = G.names[pid];
+                document.getElementById('score-' + i).textContent = G.scores[pid];
+                document.getElementById('box-' + i).classList.toggle('active', G.turn === pid);
+            });
+
+            document.getElementById('box-me').classList.toggle('active', G.turn === G.myId);
+
+            const ind = document.getElementById('indicator');
+            ind.className = 'tile ' + G.indicator.c;
+            ind.innerHTML = G.indicator.j ? '★' : G.indicator.n + '<span class="suit">' + SUITS[G.indicator.c] + '</span>';
+
+            const indInfo = document.getElementById('info-indicator');
+            indInfo.className = 'tile ' + G.indicator.c;
+            indInfo.innerHTML = G.indicator.j ? '★' : G.indicator.n + '<span class="suit">' + SUITS[G.indicator.c] + '</span>';
+
+            const okeyInfo = document.getElementById('info-okey');
+            okeyInfo.className = 'tile okey ' + G.okey.c;
+            okeyInfo.innerHTML = G.okey.n + '<span class="suit">' + SUITS[G.okey.c] + '</span>';
+
+            document.getElementById('deck-count').textContent = G.deck.length;
+
+            const disc = document.getElementById('discard');
+            if (G.discard.length > 0) {
+                const top = G.discard[G.discard.length - 1];
+                disc.className = 'tile ' + top.c + (top.j ? ' joker' : '');
+                disc.innerHTML = top.j ? '★' : top.n + '<span class="suit">' + SUITS[top.c] + '</span>';
+            } else {
+                disc.className = 'tile empty';
+                disc.innerHTML = '';
+            }
+
+            // Çöp alanına sürükle-bırak
+            disc.ondragover = (e) => {
+                e.preventDefault();
+                disc.style.border = '3px solid var(--gold)';
+            };
+            disc.ondragleave = () => {
+                disc.style.border = '';
+            };
+            disc.ondrop = (e) => {
+                e.preventDefault();
+                disc.style.border = '';
+                if (dragData && G.turn === G.myId && G.phase === 'discard') {
+                    // Taşı çöpe at
+                    const idx = G.hands[G.myId].findIndex(t => t.id === dragData.id);
+                    if (idx >= 0) {
+                        const tile = G.hands[G.myId].splice(idx, 1)[0];
+                        delete G.rackLayout[tile.id];
+
+                        if (isOkey(tile)) {
+                            if (confirm('Okey taşını atmak -2 puan ceza! Emin misiniz?')) {
+                                G.scores[G.myId] -= 2;
+                                toast('⚠️ Okey attınız! -2 puan');
+                            } else {
+                                G.hands[G.myId].splice(idx, 0, tile);
+                                render();
+                                return;
+                            }
+                        }
+
+                        G.discard.push(tile);
+                        G.discardHistory.push(tile);
+                        selectedTile = null;
+
+                        nextTurn();
+                        render();
+                    }
+                }
+            };
+
+
+            const myTiles = myHand.filter(t => t.type !== 'spacer');
+            document.getElementById('btn-okey').disabled =
+                !(G.turn === G.myId && G.phase === 'discard' && myTiles.length >= 14);
+
+            document.getElementById('btn-double').style.background =
+                G.doubleMode ? '#dc2626' : '#9333ea';
+        }
+
+        function createTileDiv(tile) {
+            const div = document.createElement('div');
+
+            if (tile.type === 'spacer') {
+                div.className = 'tile spacer';
+                div.onclick = () => {
+                    const idx = G.hands[G.myId].indexOf(tile);
+                    G.hands[G.myId].splice(idx, 1);
+                    delete G.rackLayout[tile.id];
+                    render();
+                };
+                return div;
+            }
+
+            if (tile.faceDown) {
+                div.className = 'tile back';
+                div.innerHTML = '◆';
+                div.onclick = () => {
+                    tile.faceDown = !tile.faceDown;
+                    render();
+                    toast(tile.faceDown ? 'Okey taşı gizlendi' : 'Okey taşı açıldı');
+                };
+            } else {
+                div.className = 'tile ' + tile.c;
+                if (tile.j) div.classList.add('joker');
+                if (isOkey(tile)) {
+                    div.classList.add('okey');
+                    div.onclick = () => {
+                        tile.faceDown = true;
+                        render();
+                        toast('Okey taşı gizlendi');
+                    };
+                } else {
+                    div.onclick = () => clickTile(tile);
+                }
+                if (selectedTile && selectedTile.id === tile.id) div.classList.add('sel');
+                div.innerHTML = tile.j ? '★' : tile.n + '<span class="suit">' + SUITS[tile.c] + '</span>';
+            }
+
+            div.draggable = true;
+            div.ondragstart = () => {
+                dragData = tile;
+                div.style.opacity = '0.5';
+            };
+            div.ondragend = () => {
+                div.style.opacity = '1';
+                dragData = null;
+            };
+
+            return div;
+        }
+
+        function updateStatus() {
+            const status = document.getElementById('status');
+            if (G.turn === G.myId) {
+                status.textContent = G.phase === 'draw' ? '📥 Taş çekin' : '🎯 Taşı çöp alanına sürükleyin';
+                status.className = 'myturn';
+            } else {
+                status.textContent = '⏳ ' + G.names[G.turn] + ' oynuyor...';
+                status.className = '';
+            }
+        }
+
+        function clickTile(tile) {
+            if (G.turn !== G.myId || G.phase !== 'discard') {
+                toast(G.phase === 'draw' ? 'Önce taş çekin!' : 'Sıra sizde değil!');
+                return;
+            }
+
+            if (selectedTile && selectedTile.id === tile.id) {
+                discardTile(tile);
+            } else {
+                selectedTile = tile;
+                render();
+            }
+        }
+
+        function discardTile(tile) {
+            if (isOkey(tile) && !confirm('Okey taşını atmak -2 puan ceza! Emin misiniz?')) {
+                return;
+            }
+
+            if (isOkey(tile)) {
+                G.scores[G.myId] -= 2;
+                toast('⚠️ Okey attınız! -2 puan');
+            }
+
+            const idx = G.hands[G.myId].indexOf(tile);
+            G.hands[G.myId].splice(idx, 1);
+            delete G.rackLayout[tile.id];
+            G.discard.push(tile);
+            G.discardHistory.push(tile);
+            selectedTile = null;
+
+            nextTurn();
+            render();
+            syncGameState();
+        }
+
+        function drawFromDeck() {
+            if (G.turn !== G.myId || G.phase !== 'draw') {
+                toast(G.turn !== G.myId ? 'Sıra sizde değil!' : 'Zaten taş çektiniz!');
+                return;
+            }
+            if (G.deck.length === 0) {
+                endGameDraw();
+                return;
+            }
+
+            const tile = G.deck.pop();
+            if (isOkey(tile)) tile.faceDown = true;
+            G.hands[G.myId].push(tile);
+
+            // Boş hücre bul ve taşı oraya yerleştir (otomatik sıralama YOK)
+            let placed = false;
+            for (let row = 0; row < 3 && !placed; row++) {
+                for (let col = 0; col < 15 && !placed; col++) {
+                    const occupied = G.hands[G.myId].some(t => {
+                        const layout = G.rackLayout[t.id];
+                        return layout && layout.row === row && layout.col === col;
+                    });
+                    if (!occupied) {
+                        G.rackLayout[tile.id] = { row, col };
+                        placed = true;
+                    }
+                }
+            }
+
+            G.phase = 'discard';
+            render();
+            syncGameState();
+            toast('Taş çektiniz - istediğiniz yere sürükleyin');
+        }
+
+        function drawFromDiscard() {
+            if (G.turn !== G.myId || G.phase !== 'draw') {
+                toast(G.turn !== G.myId ? 'Sıra sizde değil!' : 'Zaten taş çektiniz!');
+                return;
+            }
+            if (G.discard.length === 0) {
+                toast('Çöp boş!');
+                return;
+            }
+
+            // Deste bittiyse çöpten alamazsınız
+            if (G.deck.length === 0) {
+                toast('Deste bitti - Oyun berabere!');
+                endGameDraw();
+                return;
+            }
+
+            const tile = G.discard.pop();
+            G.hands[G.myId].push(tile);
+
+            // Boş hücre bul (otomatik sıralama YOK)
+            let placed = false;
+            for (let row = 0; row < 3 && !placed; row++) {
+                for (let col = 0; col < 15 && !placed; col++) {
+                    const occupied = G.hands[G.myId].some(t => {
+                        const layout = G.rackLayout[t.id];
+                        return layout && layout.row === row && layout.col === col;
+                    });
+                    if (!occupied) {
+                        G.rackLayout[tile.id] = { row, col };
+                        placed = true;
+                    }
+                }
+            }
+
+            G.phase = 'discard';
+            render();
+            syncGameState();
+        }
+
+        function nextTurn() {
+            G.turn = (G.turn + 3) % 4;
+            G.phase = 'draw';
+
+            if (G.turn !== G.myId) {
+                setTimeout(() => botPlay(G.turn), 1200);
+            }
+        }
+
+        function sortByNumber() {
+            G.hands[G.myId].sort((a, b) => {
+                if (a.type === 'spacer') return 1;
+                if (b.type === 'spacer') return -1;
+                if (a.j) return 1;
+                if (b.j) return -1;
+                return a.n - b.n || COLORS.indexOf(a.c) - COLORS.indexOf(b.c);
+            });
+            autoArrangeRack();
+            render();
+        }
+
+        function sortByColor() {
+            G.hands[G.myId].sort((a, b) => {
+                if (a.type === 'spacer') return 1;
+                if (b.type === 'spacer') return -1;
+                if (a.j) return 1;
+                if (b.j) return -1;
+                return COLORS.indexOf(a.c) - COLORS.indexOf(b.c) || a.n - b.n;
+            });
+            autoArrangeRack();
+            render();
+        }
+
+        function startLocalGame() {
+            G.mode = 'local';
+            dealCards();
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('game').classList.add('active');
+            render();
+            toast('Oyun başladı! İlk taşı atın.');
+        }
+
+        // ==================== ONLINE FUNCTIONS ====================
+
+        function createRoom() {
+            const name = document.getElementById('host-name').value.trim();
+            if (!name) {
+                toast('Lütfen adınızı girin!');
+                return;
+            }
+
+            G.mode = 'online';
+            G.isHost = true;
+            G.roomCode = generateRoomCode();
+            G.myPlayerId = 'p0';
+            G.myId = 0;
+
+            const roomRef = dbRef(db, 'rooms/' + G.roomCode);
+            dbSet(roomRef, {
+                host: G.myPlayerId,
+                started: false,
+                players: {
+                    p0: { name: name, connected: true }
+                },
+                state: null
+            });
+
+            dbOnDisconnect(dbRef(db, 'rooms/' + G.roomCode + '/players/p0')).remove();
+
+            document.getElementById('room-code').textContent = G.roomCode;
+            document.getElementById('room-display').style.display = 'block';
+            document.getElementById('create-btn').textContent = 'Başlat';
+            document.getElementById('create-btn').onclick = startOnlineGame;
+
+            listenToRoom();
+            toast('Oda oluşturuldu: ' + G.roomCode);
+        }
+
+        function joinRoom() {
+            const name = document.getElementById('join-name').value.trim();
+            const code = document.getElementById('join-code').value.trim().toUpperCase();
+
+            if (!name || !code) {
+                toast('Ad ve Oda Kodu gerekli!');
+                return;
+            }
+
+            // Önce odayı kontrol et
+            const roomRef = dbRef(db, 'rooms/' + code);
+            dbOnValue(roomRef, (snapshot) => {
+                const room = snapshot.val();
+                if (!room) {
+                    toast('Oda bulunamadı!');
+                    return;
+                }
+
+                if (room.started) {
+                    toast('Oyun zaten başlamış!');
+                    return;
+                }
+
+                const playerCount = Object.keys(room.players || {}).length;
+                if (playerCount >= 4) {
+                    toast('Oda dolu!');
+                    return;
+                }
+
+                // Odaya katıl
+                G.mode = 'online';
+                G.isHost = false;
+                G.roomCode = code;
+                G.myPlayerId = 'p' + playerCount;
+                G.myId = playerCount;
+
+                // Oyuncuyu ekle
+                dbUpdate(dbRef(db, 'rooms/' + code + '/players/' + G.myPlayerId), {
+                    name: name,
+                    connected: true
+                }).then(() => {
+                    dbOnDisconnect(dbRef(db, 'rooms/' + code + '/players/' + G.myPlayerId)).remove();
+
+                    hideModal('join');
+                    showModal('wait');
+                    listenToRoom();
+                    toast('Odaya katıldınız!');
+                });
+
+            }, { onlyOnce: true });
+        }
+
+        function listenToRoom() {
+            if (roomListener) return;
+
+            const roomRef = dbRef(db, 'rooms/' + G.roomCode);
+            roomListener = dbOnValue(roomRef, (snapshot) => {
+                const room = snapshot.val();
+                if (!room) {
+                    toast('Oda kapatıldı!');
+                    leaveGame();
+                    return;
+                }
+
+                updatePlayerList(room.players);
+
+                if (room.started && room.state) {
+                    if (!G.started) {
+                        hideModal('create');
+                        hideModal('wait');
+                        document.getElementById('menu').style.display = 'none';
+                        document.getElementById('game').classList.add('active');
+                    }
+
+                    loadGameState(room.state);
+
+                    // İlk defa başlatıldıysa rack düzenle
+                    if (!G.started || G.hands[G.myId].some(t => !G.rackLayout[t.id])) {
+                        autoArrangeRack();
+                    }
+
+                    render();
+
+                    // Bot sırası geldiyse başlat
+                    if (room.state.started && !G.started && G.turn !== G.myId) {
+                        setTimeout(() => botPlay(G.turn), 1200);
+                    }
+                }
+            });
+        }
+
+        function updatePlayerList(players) {
+            const list = document.getElementById('player-list');
+            if (!list) return;
+
+            list.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const pid = 'p' + i;
+                const player = players && players[pid];
+                const item = document.createElement('div');
+                item.className = 'player-item' + (player ? ' here' : '');
+                item.innerHTML = `
+                    <div class="player-dot"></div>
+                    <div>${player ? player.name : 'Bekleniyor...'}</div>
+                `;
+                list.appendChild(item);
+            }
+        }
+
+        function startOnlineGame() {
+            const roomRef = dbRef(db, 'rooms/' + G.roomCode);
+            dbOnValue(roomRef, (snapshot) => {
+                const room = snapshot.val();
+                const playerCount = Object.keys(room.players || {}).length;
+
+                if (playerCount < 2) {
+                    toast('En az 2 oyuncu gerekli!');
+                    return;
+                }
+
+                dealCards();
+
+                // Botları ekle
+                for (let i = playerCount; i < 4; i++) {
+                    G.names[i] = 'Bot ' + (i - playerCount + 1);
+                }
+
+                // İsimleri güncelle
+                Object.keys(room.players).forEach((pid, idx) => {
+                    G.names[idx] = room.players[pid].name;
+                });
+
+                const stateData = serializeGameState();
+                dbUpdate(roomRef, {
+                    started: true,
+                    state: stateData
+                }).then(() => {
+                    // Host için de oyunu başlat
+                    autoArrangeRack(); // Host'un elini düzenle
+                    hideModal('create');
+                    document.getElementById('menu').style.display = 'none';
+                    document.getElementById('game').classList.add('active');
+                    render();
+                    toast('Oyun başladı!');
+
+                    // Bot sırası geldiyse başlat
+                    if (G.turn !== G.myId) {
+                        setTimeout(() => botPlay(G.turn), 1200);
+                    }
+                });
+
+            }, { onlyOnce: true });
+        }
+
+        function serializeGameState() {
+            return {
+                myId: G.myId,
+                names: G.names,
+                scores: G.scores,
+                deck: G.deck,
+                hands: G.hands,
+                indicator: G.indicator,
+                okey: G.okey,
+                discard: G.discard,
+                discardHistory: G.discardHistory,
+                turn: G.turn,
+                phase: G.phase,
+                started: G.started,
+                doubleMode: G.doubleMode,
+                nextTileId: G.nextTileId
+            };
+        }
+
+        function loadGameState(state) {
+            Object.assign(G, state);
+            G.myId = parseInt(G.myPlayerId.replace('p', ''));
+        }
+
+        function syncGameState() {
+            if (G.mode === 'online' && G.started) {
+                const stateData = serializeGameState();
+                dbUpdate(dbRef(db, 'rooms/' + G.roomCode), { state: stateData });
+            }
+        }
+
+        function cancelRoom() {
+            if (G.roomCode) {
+                dbRemove(dbRef(db, 'rooms/' + G.roomCode));
+            }
+            hideModal('create');
+            location.reload();
+        }
+
+        function leaveGame() {
+            if (G.roomCode && G.myPlayerId) {
+                dbRemove(dbRef(db, 'rooms/' + G.roomCode + '/players/' + G.myPlayerId));
+            }
+            hideModal('wait');
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>
